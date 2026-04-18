@@ -9,11 +9,18 @@ class FoodType(str, Enum):
     FRUIT = "фрукт"
     DESSERT = "сладкое"
     SALAD = "салат"
+    GARNISH = "гарнир"
+    BREAKFAST = "завтрак"
+    SNACK = "закуска"
+    LIQUID = "жидкое"
 
 class FoodDevice(str, Enum):
     OVEN = "духовка"
     STOVE = "плита"
     AEROGRILL = "аэрогриль"
+    FRIDGE = "холодильник"
+    NUKE = "микроволновка"
+    MULTICOOKER = "мультиварка"
 
 @dataclass(frozen=True)
 class Dish:

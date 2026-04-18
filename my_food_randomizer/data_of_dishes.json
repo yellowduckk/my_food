@@ -19,7 +19,7 @@
     {
       "id": 3,
       "name": "сырники",
-      "food_type": "-",
+      "food_type": "завтрак",
       "food_device": "духовка",
       "cooking_time": 60,
       "eating_time": 2
@@ -27,7 +27,7 @@
      {
       "id": 4,
       "name": "сырники",
-      "food_type": "-",
+      "food_type": "завтрак",
       "food_device": "аэрогриль",
       "cooking_time": 40,
       "eating_time": 2
@@ -36,7 +36,7 @@
       "id": 5,
       "name": "банановый десертик",
       "food_type": "сладкое",
-      "food_device": "-",
+      "food_device": "холодильник",
       "cooking_time": 30,
       "eating_time": 1
     },
@@ -99,7 +99,7 @@
     {
       "id": 13,
       "name": "тарталетки",
-      "food_type": "-",
+      "food_type": "закуска",
       "food_device": "духовка",
       "cooking_time": 40,
       "eating_time": 2
@@ -107,7 +107,7 @@
     {
       "id": 14,
       "name": "горячие бутерброды",
-      "food_type": "-",
+      "food_type": "завтрак",
       "food_device": "плита",
       "cooking_time": 30,
       "eating_time": 1
@@ -115,7 +115,7 @@
     {
       "id": 15,
       "name": "горячие бутерброды в микроволновке",
-      "food_type": "-",
+      "food_type": "завтрак",
       "food_device": "микроволновка",
       "cooking_time": 10,
       "eating_time": 1
@@ -156,7 +156,7 @@
       "id": 19,
       "name": "котлеты",
       "food_type": "мясо",
-      "food_device": "-",
+      "food_device": "духовка",
       "cooking_time": 60,
       "eating_time": 2
     },
@@ -171,7 +171,7 @@
     {
       "id": 21,
       "name": "слоеный пирог с ветчиной и сыром",
-      "food_type": "-",
+      "food_type": "закуска",
       "food_device": "духовка",
       "cooking_time": 40,
       "eating_time": 2
@@ -187,7 +187,7 @@
     {
       "id": 23,
       "name": "картоха-фри",
-      "food_type": "-",
+      "food_type": "гарнир",
       "food_device": "аэрогриль",
       "cooking_time": 30,
       "eating_time": 1
@@ -195,7 +195,7 @@
     {
       "id": 24,
       "name": "картоха по-деревенски",
-      "food_type": "-",
+      "food_type": "гарнир",
       "food_device": "аэрогриль",
       "cooking_time": 30,
       "eating_time": 1
@@ -203,7 +203,7 @@
     {
       "id": 25,
       "name": "гренки",
-      "food_type": "-",
+      "food_type": "завтрак",
       "food_device": "плита",
       "cooking_time": 30,
       "eating_time": 1
@@ -215,6 +215,46 @@
       "food_device": "-",
       "cooking_time": 60,
       "eating_time": 2
+    },
+    {
+      "id": 27,
+      "name": "суп",
+      "food_type": "жидкое",
+      "food_device": "мультиварка",
+      "cooking_time": 120,
+      "eating_time": 3
+    },
+    {
+      "id": 28,
+      "name": "рис",
+      "food_type": "гарнир",
+      "food_device": "мультиварка",
+      "cooking_time": 60,
+      "eating_time": 3
+    },
+    {
+      "id": 29,
+      "name": "гречка",
+      "food_type": "гарнир",
+      "food_device": "мультиварка",
+      "cooking_time": 60,
+      "eating_time": 3
+    },
+    {
+      "id": 30,
+      "name": "макароны",
+      "food_type": "гарнир",
+      "food_device": "плита",
+      "cooking_time": 30,
+      "eating_time": 3
+    },
+    {
+      "id": 31,
+      "name": "булгур",
+      "food_type": "гарнир",
+      "food_device": "плита",
+      "cooking_time": 30,
+      "eating_time": 3
     }
   ]
 }
