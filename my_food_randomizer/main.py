@@ -39,8 +39,13 @@ def main():
             list_of_food.append(meat)
     """
 
-    for food in list_of_food:
-        print(food)
+    # for food in list_of_food:
+    #     print(food)
+
+# print(*load_dish(), sep="\n")
+for i in load_dish():
+    if i.food_type == "завтрак":
+        print(i)
 
 
 if __name__ == '__main__':
