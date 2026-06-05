@@ -1,6 +1,6 @@
 import random
 
-from my_food_randomizer.dish_classes import FoodType, FoodDevice
+from my_food_randomizer.dish_classes import FoodType, FoodDevice, Preference
 from my_food_randomizer.load_dishes import load_dish
 from my_food_randomizer.randomizer import WeekGenerator
 
@@ -22,11 +22,11 @@ def main():
     #list_of_meat = wg.randomize(5, "food_type", FoodType("мясо"))
     #list_of_fruits = wg.randomize(5, "food_type", FoodType("фрукт"))
 
-    list_of_food = wg.randomize(5)
+    list_of_food = wg.randomize(6, [FoodDevice("духовка"), FoodDevice("плита"), FoodDevice("аэрогриль"), FoodDevice("холодильник"), FoodDevice("микроволновка"), FoodDevice("мультиварка")], Preference("лето"))
 
     is_fruit = find_type_of_food(list_of_food)
     if not is_fruit:
-        fruits = wg.randomize(2, "food_type", FoodType("фрукт"))
+        fruits = wg.randomize(2, [FoodDevice("духовка"), FoodDevice("плита"), FoodDevice("аэрогриль"), FoodDevice("холодильник"), FoodDevice("микроволновка"), FoodDevice("мультиварка")], Preference("лето"))
         for fruit in fruits:
             list_of_food.append(fruit)
     #TODO подумать как совместить гарнир с мясом
@@ -44,11 +44,12 @@ def main():
 
 # print(*load_dish(), sep="\n")
 for i in load_dish():
-    if i.food_type == "завтрак":
+     if i.food_type == "сладкое":
         print(i)
 
 
 if __name__ == '__main__':
     main()
+
 
 

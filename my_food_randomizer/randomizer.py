@@ -1,6 +1,6 @@
 import random
 from typing import List
-from my_food_randomizer.dish_classes import Dish, FoodType, FoodDevice
+from my_food_randomizer.dish_classes import Dish, FoodType, FoodDevice, Preference
 
 
 class WeekGenerator:
@@ -15,21 +15,26 @@ class WeekGenerator:
         return suitable_foods
 # Подбирает еду по типу
 
-    def _get_candidates_food_device(self, food_device: FoodDevice):
+    def _get_candidates_food_device(self, food_devices: list[FoodDevice]):
         suitable_foods = []
         for dish in self.dishes:
-            if dish.food_device == food_device:
+            if dish.food_device in food_devices:
                 suitable_foods.append(dish)
         return suitable_foods
 # Подбирает еду по способу приготовления
 
-    def randomize(self, count_of_dishes=6, flag="", food_type=None, food_device=None):
-        if flag == "food_type":
-            foods = self._get_candidates_food_type(food_type)
-        elif flag == "food_device":
-            foods = self._get_candidates_food_device(food_device)
-        else:
-            foods = self.dishes
+    def _get_candidates_preferences(self, preference: Preference):
+        suitable_foods = []
+        for dish_food in self.dishes:
+            if preference in dish_food.preferences:
+                suitable_foods.append(dish_food)
+        return suitable_foods
+
+
+
+    def randomize(self, count_of_dishes: int, food_devices: list[FoodDevice], preference: Preference):
+        foods = self._get_candidates_food_device(food_devices)
+        foods = self._get_candidates_preferences(preference)
 
         list_food = []
         for i in range(count_of_dishes):
