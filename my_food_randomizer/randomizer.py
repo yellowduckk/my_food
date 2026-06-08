@@ -7,34 +7,44 @@ class WeekGenerator:
     def __init__(self, dishes: List[Dish]):
         self.dishes = dishes # Вся еда
 
-    def _get_candidates_food_type(self, food_type: FoodType):
-        suitable_foods = []
-        for dish in self.dishes:
-            if dish.food_type == food_type:
-                suitable_foods.append(dish)
-        return suitable_foods
+    # def _get_candidates_food_type(self, food_type: FoodType):
+    #     suitable_foods = []
+    #     for dish in self.dishes:
+    #         if dish.food_type == food_type:
+    #             suitable_foods.append(dish)
+    #     return suitable_foods
 # Подбирает еду по типу
 
-    def _get_candidates_food_device(self, food_devices: list[FoodDevice]):
-        suitable_foods = []
-        for dish in self.dishes:
-            if dish.food_device in food_devices:
-                suitable_foods.append(dish)
-        return suitable_foods
+    # def _get_candidates_food_device(self, food_devices: list[FoodDevice]):
+    #     suitable_foods = []
+    #     for dish in self.dishes:
+    #         if dish.food_device in food_devices:
+    #             suitable_foods.append(dish)
+    #     return suitable_foods
 # Подбирает еду по способу приготовления
 
-    def _get_candidates_preferences(self, preference: Preference):
-        suitable_foods = []
+    # def _get_candidates_preferences(self, preference: Preference):
+    #     suitable_foods = []
+    #     for dish_food in self.dishes:
+    #         if preference in dish_food.preferences:
+    #             suitable_foods.append(dish_food)
+    #     return suitable_foods
+
+    def _get_candidates(self, preference: Preference, food_device: list[FoodDevice]):
+        suitable_foods1 = []
+        suitable_foods2 = []
         for dish_food in self.dishes:
+            if dish_food.food_device in food_device or dish_food.food_device == "-":
+                suitable_foods1.append(dish_food)
+        for dish_food in suitable_foods1:
             if preference in dish_food.preferences:
-                suitable_foods.append(dish_food)
-        return suitable_foods
+                suitable_foods2.append(dish_food)
+        return suitable_foods2
 
 
 
     def randomize(self, count_of_dishes: int, food_devices: list[FoodDevice], preference: Preference):
-        foods = self._get_candidates_food_device(food_devices)
-        foods = self._get_candidates_preferences(preference)
+        foods = self._get_candidates(preference, food_devices)
 
         list_food = []
         for i in range(count_of_dishes):

@@ -38,7 +38,7 @@ class Dish:
     food_type: FoodType
     preferences: list[Preference]
     food_device: FoodDevice
-    ingredients: dict[str: str]
+    ingredients: dict
     cooking_time: timedelta
     eating_time: timedelta
 # Шаблон блюда

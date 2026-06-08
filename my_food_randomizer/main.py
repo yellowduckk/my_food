@@ -44,7 +44,7 @@ def main():
 
 # print(*load_dish(), sep="\n")
 for i in load_dish():
-     if i.food_type == "сладкое":
+     if i.food_type == "закуска":
         print(i)
 
 
