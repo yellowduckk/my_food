@@ -41,16 +41,55 @@ class WeekGenerator:
                 suitable_foods2.append(dish_food)
         return suitable_foods2
 
-
+    def recursive_randomize(self, count_of_dishes: int, list_food: list[Dish], shedule: list[Dish]):
+        if len(shedule) >= count_of_dishes:
+            return []
+        if len(shedule) < count_of_dishes:
+            condidate = random.choice(list_food)
+            while condidate in shedule:
+                condidate = random.choice(list_food)
+            mas = []
+            for num in range(condidate.eating_time):
+                mas.append(condidate)
+            if len(shedule) + len(mas) <= count_of_dishes:
+                return self.recursive_randomize(count_of_dishes, list_food, shedule + mas) + mas
+            else:
+                return self.recursive_randomize(count_of_dishes, list_food, shedule)
+        # return self.recursive_randomize(count_of_dishes, list_food, shedule)
 
     def randomize(self, count_of_dishes: int, food_devices: list[FoodDevice], preference: Preference):
         foods = self._get_candidates(preference, food_devices)
 
-        list_food = []
-        for i in range(count_of_dishes):
-            temp_dish = random.choice(foods)
-            if temp_dish not in list_food:
-                list_food.append(temp_dish)
+        breakfasts = []
+        dinners_first = []
+        dinners_second = []
+        fruits = []
+        others = []
+        for food in foods:
+            if food.food_type == "завтрак":
+                breakfasts.append(food)
+            elif food.food_type == "гарнир" or food.food_type == "жидкое":
+                dinners_first.append(food)
+            elif food.food_type == "рыба" or food.food_type == "мясо":
+                dinners_second.append(food)
+            elif food.food_type == "фрукт":
+                fruits.append(food)
+            else:
+                others.append(food)
+
+        list_food = self.recursive_randomize(count_of_dishes, breakfasts, [])
+
+        # condidate = random.choice(breakfasts)
+        # while condidate in list_food:
+        #     condidate = random.choice(list_food)
+        #     mas = []
+        #     for num in range(condidate.num_of_dishes):
+        #         mas.append(condidate)
+
+        # for i in range(count_of_dishes):
+        #     temp_dish = random.choice(foods)
+        #     if temp_dish not in list_food:
+        #         list_food.append(temp_dish)
 
         return list_food
 # Создаёт расписание
