@@ -18,22 +18,36 @@ class WeekGenerator:
                 suitable_foods2.append(dish_food)
         return suitable_foods2
 
-    def recursive_randomize(self, count_of_dishes: int, list_food: list[Dish], forbidden_food: list[Dish], shedule: list[Dish]):
-        if len(shedule) >= count_of_dishes:
-            return []
-        if len(shedule) < count_of_dishes:
-            condidate = random.choice(list_food)
-            if (shedule != [] and condidate in shedule) or (forbidden_food != [] and condidate in forbidden_food):
-                while condidate in shedule:
-                    condidate = random.choice(list_food)
-            mas = []
-            for num in range(condidate.eating_time):
-                mas.append(condidate)
-            length = len(mas) + len(shedule)
-            if length <= count_of_dishes or forbidden_food == []:
-                return self.recursive_randomize(count_of_dishes, list_food, forbidden_food, shedule + mas) + [condidate]
-            else:
-                return self.recursive_randomize(count_of_dishes, list_food, forbidden_food, shedule)
+    # def recursive_randomize(self, count_of_dishes: int, list_food: list[Dish], forbidden_food: list[Dish], shedule: list[Dish], shedule_length: int, meat_flag: bool):
+    #     if shedule_length >= count_of_dishes:
+    #         return []
+    #     if shedule_length < count_of_dishes:
+    #         condidate = random.choice(list_food)
+    #         if condidate in shedule or condidate in forbidden_food:
+    #             while condidate in shedule or condidate in forbidden_food:
+    #                 condidate = random.choice(list_food)
+    #         length = shedule_length + condidate.eating_time
+    #         if length <= count_of_dishes or (meat_flag is False):
+    #             return self.recursive_randomize(count_of_dishes, list_food, forbidden_food, shedule + [condidate], length, meat_flag) + [condidate]
+    #         else:
+    #             return self.recursive_randomize(count_of_dishes, list_food, forbidden_food, shedule, shedule_length, meat_flag)
+
+    def linear_randomize(self, count_of_dishes: int, used_food: list[Dish], list_food: list[Dish]):
+        unused_food = list_food
+        if used_food != []: unused_food = [elem for elem in list_food if elem not in used_food]
+        shedule = []
+        count_of_dishes_in_shedule = 0
+        while count_of_dishes_in_shedule < count_of_dishes:
+            condidate = random.choice(unused_food)
+            if condidate.eating_time > count_of_dishes - count_of_dishes_in_shedule:
+                break_count = 0
+                while condidate.eating_time > count_of_dishes - count_of_dishes_in_shedule and break_count < 100:
+                    condidate = random.choice(unused_food)
+                    break_count += 1
+            shedule.append(condidate)
+            unused_food.pop(unused_food.index(condidate))
+            count_of_dishes_in_shedule += condidate.eating_time
+        return shedule
 
     def randomize(self, count_of_dishes: int, food_devices: list[FoodDevice], preference: Preference):
         foods = self._get_candidates(preference, food_devices)
@@ -55,12 +69,19 @@ class WeekGenerator:
             else:
                 others.append(food)
 
-        list_food_breakfasts = self.recursive_randomize(count_of_dishes, breakfasts, [], [])
-        list_food_garnish = self.recursive_randomize(count_of_dishes, garnish, [], [])
+        # list_food_breakfasts = self.recursive_randomize(count_of_dishes, breakfasts, [], [], 0, False)
+        # list_food_garnish = self.recursive_randomize(count_of_dishes, garnish, [], [], 0, False)
+        # list_food_meat = []
+        # for elem in list_food_garnish:
+        #     list_food_meat += self.recursive_randomize(elem.eating_time, meat, list_food_meat, [], 0, True)
+        # list_food_others = self.recursive_randomize(count_of_dishes // 2, others, [], [], 0, False) + [random.choice(fruits)]
+
+        list_food_breakfasts = self.linear_randomize(count_of_dishes, [], breakfasts)
+        list_food_garnish = self.linear_randomize(count_of_dishes, [], garnish)
         list_food_meat = []
         for elem in list_food_garnish:
-            list_food_meat += self.recursive_randomize(elem.eating_time, meat, list_food_meat, [])
-        list_food_others = self.recursive_randomize(count_of_dishes // 2, others, [], []) + [random.choice(fruits)]
+            list_food_meat += self.linear_randomize(elem.eating_time, list_food_meat, meat)
+        list_food_others = self.linear_randomize(count_of_dishes, [], others) + [random.choice(fruits)]
 
         return (list_food_breakfasts, list_food_garnish, list_food_meat, list_food_others)
 # Создаёт расписание
