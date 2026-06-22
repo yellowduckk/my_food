@@ -42,5 +42,3 @@ class Dish:
     cooking_time: timedelta
     eating_time: timedelta
 # Шаблон блюда
-
-
