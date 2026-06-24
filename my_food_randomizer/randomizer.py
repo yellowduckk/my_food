@@ -9,7 +9,7 @@ class WeekGenerator:
         self.dishes = dishes # Вся еда
 
 
-    def _get_candidates(self, preference: Preference, food_device: list[FoodDevice]) -> list[Dish]:
+    def _get_candidates(self, preferences: list[Preference], food_device: list[FoodDevice]) -> list[Dish]:
         """
         :param preference: предпочтения в еде
         :param food_device: устройство, на котором готовят блюдо
@@ -17,10 +17,20 @@ class WeekGenerator:
         """
         suitable_foods = []
         for dish_food in self.dishes:
-            if (dish_food.food_device in food_device or dish_food.food_device == "-") and preference in dish_food.preferences:
+            if (dish_food.food_device in food_device or dish_food.food_device == "-") and self._check_preferences(dish_food.preferences, preferences) is True:
                 suitable_foods.append(dish_food)
         return suitable_foods
 
+    def _check_preferences(self, food_preferences: list[Preference], preferences: list[Preference]) -> bool:
+        """
+        :param food_preferences: предпочнения, которым соответсвтует еда
+        :param preferences: предпочтения в еде
+        :return: результат проверки соответсвия предпочений, которым соответсвтует еда и предпочтений в еде
+        """
+        for preference in food_preferences:
+            if preference in preferences:
+                return True
+        return False
 
     def _count_eating_time(self, list_food: list[Dish], remaining_time: int) -> list[Dish]:
         """
@@ -62,8 +72,20 @@ class WeekGenerator:
             summary_eating_time += condidate.eating_time
         return shedule
 
+    def _lists_of_food_to_string(self, list_food_breakfasts: list[Dish], list_food_garnish: list[Dish], list_food_meat: list[Dish], list_food_others: list[Dish]) -> str:
+        list_food_breakfasts_names, list_food_garnish_names, list_food_meat_names, list_food_others_names = [], [], [], []
+        for food in list_food_breakfasts:
+            list_food_breakfasts_names.append(food.name)
+        for food in list_food_garnish:
+            list_food_garnish_names.append(food.name)
+        for food in list_food_meat:
+            list_food_meat_names.append(food.name)
+        for food in list_food_others:
+            list_food_others_names.append(food.name)
+        shedule = "Завтраки:\n-" + "\n-".join(list_food_breakfasts_names) + "\nГарниры:\n-" + "\n-".join(list_food_garnish_names) + "\nМясо/рыба:\n-" + "\n-".join(list_food_meat_names) + "\nДругое:\n-" + "\n-".join(list_food_others_names)
+        return shedule
 
-    def get_shedule(self, period_eating_time: int, food_devices: list[FoodDevice], preference: Preference) -> tuple[list[Dish], list[Dish], list[Dish], list[Dish]]:
+    def get_shedule(self, period_eating_time: int, food_devices: list[FoodDevice], preference: list[Preference]) -> str:
         """
         :param period_eating_time: время, на которое нужно составить расписание
         :param food_devices: девайсы, которые можно использовать в готовке
@@ -95,4 +117,6 @@ class WeekGenerator:
             list_food_meat += self._randomize(garnish.eating_time, list_food_meat, meat)
         list_food_others = [random.choice(fruits), random.choice(salads), random.choice(snacks), random.choice(desserts)]
 
-        return list_food_breakfasts, list_food_garnish, list_food_meat, list_food_others
+        shedule = self._lists_of_food_to_string(list_food_breakfasts, list_food_garnish, list_food_meat, list_food_others)
+
+        return shedule
