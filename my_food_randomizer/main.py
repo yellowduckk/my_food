@@ -26,10 +26,10 @@ def main():
             users[chat_id] = all_food_devices
         devices = "\n-".join(users[chat_id])
         bot.reply_to(message, f"Привет!"
-                              f"\nПропиши команду <b>[/shedule]</b>, чтобы составить расписание на неделю\n"
-                              f"Блюда в меню могут быть приготовлены с помощью этих девайсов:\n-{devices}\n"
+                              f"\n    Пропиши команду <b>[/shedule]</b>, чтобы составить расписание на неделю\n"
+                              f"    Блюда в меню могут быть приготовлены с помощью этих девайсов:\n-{devices}\n"
                               f"Все ли эти девайсы есть у вас в наличии?\n"
-                              f"Если нет, пропишите команду \n<b>[/red_devices девайс девайс девайс]</b> в таком формате, вписывая названия девайсов,"
+                              f"    Если нет, пропишите команду \n<b>[/red_devices девайс девайс девайс]</b> в таком формате, вписывая названия девайсов,"
                               f" которых у вас нет\n", parse_mode="HTML")
         # users[chat_id] = ["духовка", "плита", "аэрогриль", "холодильник", "микроволновка", "мультиварка"]
 
@@ -55,8 +55,8 @@ def main():
         date = calendar.calendar_query_handler(bot=bot, call=call, name=name, action=action, year=year, month=month, day=day)
         if action == "DAY":
             if date > today_date:
-                bot.send_message(chat_id, f"Выбрана дата {date.strftime('%d.%m.%Y')}", reply_markup=types.ReplyKeyboardRemove())
                 days_to_date = (date - today_date).days + 2
+                bot.send_message(chat_id, f"Выбрана дата {date.strftime('%d.%m.%Y')}, расписание будет составлено на {days_to_date} дней", reply_markup=types.ReplyKeyboardRemove())
                 months_to_date = (date.year - today_date.year) * 12 + date.month - today_date.month
                 seasons = set()
                 for month in range(today_date.month, months_to_date + 1):
@@ -117,6 +117,11 @@ def main():
         else:
             bot.send_message(chat_id, "Редактирование завершено, ничего не изменилось")
 
+    @bot.message_handler(commands=['reset_devices'])
+    def red_devices(message):
+        chat_id = message.chat.id
+        users[chat_id] = all_food_devices
+        bot.send_message(chat_id, "Список девайсов восстановлен")
 
 
     # @bot.callback_query_handler(func=lambda call: call.data == "yes")
