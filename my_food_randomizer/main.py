@@ -30,7 +30,8 @@ def main():
                               f"    Блюда в меню могут быть приготовлены с помощью этих девайсов:\n-{devices}\n"
                               f"Все ли эти девайсы есть у вас в наличии?\n"
                               f"    Если нет, пропишите команду \n<b>[/red_devices девайс девайс девайс]</b> в таком формате, вписывая названия девайсов,"
-                              f" которых у вас нет\n", parse_mode="HTML")
+                              f" которых у вас нет\n"
+                              f"    Если вы хотите восстановить список девайсов, то пропишите команду <b>[/reset_devices]</b>", parse_mode="HTML")
         # users[chat_id] = ["духовка", "плита", "аэрогриль", "холодильник", "микроволновка", "мультиварка"]
 
 
@@ -42,7 +43,7 @@ def main():
         devices = "\n-".join(users[chat_id])
         # for device in users[chat_id]:
         #     all_food_devices = all_food_devices + "-" + device + "\n"
-        bot.send_message(chat_id, f"Меню будет составлено с учётом наличия этих девайсов:\n-{devices}")
+        bot.send_message(chat_id, f"    Меню будет составлено с учётом наличия этих девайсов:\n-{devices}")
         today_date = datetime.datetime.now()
         bot.send_message(chat_id,"Выберите дату окончания расписания", reply_markup=calendar.create_calendar(name=calendar_callback.prefix, year=today_date.year, month=today_date.month))
 
@@ -57,11 +58,14 @@ def main():
             if date > today_date:
                 days_to_date = (date - today_date).days + 2
                 bot.send_message(chat_id, f"Выбрана дата {date.strftime('%d.%m.%Y')}, расписание будет составлено на {days_to_date} дней", reply_markup=types.ReplyKeyboardRemove())
-                months_to_date = (date.year - today_date.year) * 12 + date.month - today_date.month
+                months_to_date = (date.year - today_date.year) * 12 + date.month - today_date.month + 1
                 seasons = set()
-                for month in range(today_date.month, months_to_date + 1):
+                for month in range(today_date.month, today_date.month + months_to_date + 1):
+                    print(month)
                     seasons.add(months_numbers_to_seasons[month])
+                    print(seasons)
                 seasons = list(seasons)
+                print(seasons, "lol")
                 preferences = []
                 if seasons:
                     for season in seasons:
@@ -74,15 +78,16 @@ def main():
                 list_of_food = week_gen.get_shedule(days_to_date, food_devices, preferences)
                 print(list_of_food)
                 print(days_to_date)
-                bot.send_message(chat_id, list_of_food)
-            elif date == today_date:
+                bot.send_message(chat_id, list_of_food, parse_mode="HTML")
+            elif date.strftime('%d.%m.%Y') == today_date.strftime('%d.%m.%Y'):
                 food_devices = []
                 for device in users[chat_id]:
                     food_devices.append(FoodDevice(device))
                 preferences = [Preference(months_numbers_to_seasons[date.month])]
                 list_of_food = week_gen.get_shedule(1, food_devices, preferences)
-                bot.send_message(chat_id, list_of_food)
+                bot.send_message(chat_id, list_of_food, parse_mode="HTML")
             else:
+                print(date, today_date)
                 bot.send_message(chat_id, "Нельзя выбрать эту дату", reply_markup=types.ReplyKeyboardRemove())
         elif action == "CANCEL":
             bot.send_message(chat_id, "Выбор даты отменён", reply_markup=types.ReplyKeyboardRemove())
@@ -111,7 +116,7 @@ def main():
                 removed_devices.append(device)
         removed_devices = "\n-".join(removed_devices)
         if removed_devices:
-            bot.send_message(chat_id, f"Редактирование завершено,\n"
+            bot.send_message(chat_id, f"    Редактирование завершено,\n"
                                               f"убраны девайсы:\n"
                                               f"-{removed_devices}\n")
         else:
@@ -124,20 +129,20 @@ def main():
         bot.send_message(chat_id, "Список девайсов восстановлен")
 
 
-    # @bot.callback_query_handler(func=lambda call: call.data == "yes")
-    # def callback_yes(call):
-    #     message = call.message
-    #     bot.send_message(message.chat.id, "Круто")
-    #     bot.edit_message_text(chat_id=message.chat.id, message_id=message.message_id,
-    #                           text=f"Блюда в меню могут быть приготовлены с помощью этих девайсов:\n{all_food_devices}Все ли эти девайсы есть у вас в наличии?")
-    #
-    #
-    # @bot.callback_query_handler(func=lambda call: call.data == "no")
-    # def callback_yes(call):
-    #     message = call.message
-    #     bot.send_message(message.chat.id, "Не круто")
-    #     bot.edit_message_text(chat_id=message.chat.id, message_id=message.message_id,
-    #                           text=f"Блюда в меню могут быть приготовлены с помощью этих девайсов:\n{all_food_devices}Все ли эти девайсы есть у вас в наличии?")
+    @bot.callback_query_handler(func=lambda call: call.data == "yes")
+    def callback_yes(call):
+        message = call.message
+        bot.send_message(message.chat.id, "Круто")
+        bot.edit_message_text(chat_id=message.chat.id, message_id=message.message_id,
+                              text=f"Блюда в меню могут быть приготовлены с помощью этих девайсов:\n{all_food_devices}Все ли эти девайсы есть у вас в наличии?")
+
+
+    @bot.callback_query_handler(func=lambda call: call.data == "no")
+    def callback_yes(call):
+        message = call.message
+        bot.send_message(message.chat.id, "Не круто")
+        bot.edit_message_text(chat_id=message.chat.id, message_id=message.message_id,
+                              text=f"Блюда в меню могут быть приготовлены с помощью этих девайсов:\n{all_food_devices}Все ли эти девайсы есть у вас в наличии?")
 
 
 

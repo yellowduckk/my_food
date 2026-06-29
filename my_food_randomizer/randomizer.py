@@ -39,7 +39,7 @@ class WeekGenerator:
         :return: если возможно, список еды, поедание которой занимает время, которое нужно занять, иначе весь список блюд, переданный изначально
         """
         all_eating_times = list(set([elem.eating_time for elem in list_food]))
-        print(all_eating_times)
+        # print(all_eating_times)
         suitable_food = []
         if remaining_time in all_eating_times:
             for food in list_food:
@@ -90,8 +90,8 @@ class WeekGenerator:
             list_food_breakfasts_names.append(food.name)
         for food in list_food_garnish:
             for meat in dict_food_meat[food.name]:
-                list_meat_names += [meat.name, str(meat.eating_time)]
-            garnish_and_meat_string = food.name + str(food.eating_time) + " и " + ", ".join(list_meat_names)
+                list_meat_names += [meat.name]
+            garnish_and_meat_string = food.name + " и " + ''.join(list_meat_names)
             list_meat_names = []
             list_food_garnish_strings.append(garnish_and_meat_string)
 
@@ -99,7 +99,7 @@ class WeekGenerator:
         #     list_food_meat_names.append(food.name)
         for food in list_food_others:
             list_food_others_names.append(food.name)
-        shedule = "Завтраки:\n-" + "\n-".join(list_food_breakfasts_names) + "\nБлюда:\n-" + "\n-".join(list_food_garnish_strings) + "\nДругое:\n-" + "\n-".join(list_food_others_names)
+        shedule = "<b>Завтраки:</b>\n- " + "\n- ".join(list_food_breakfasts_names) + "\n<b>Блюда:</b>\n- " + "\n- ".join(list_food_garnish_strings) + "\n<b>Другое:</b>\n- " + "\n- ".join(list_food_others_names)
         return shedule
 
     def get_shedule(self, period_eating_time: int, food_devices: list[FoodDevice], preference: list[Preference]) -> str:
@@ -131,12 +131,28 @@ class WeekGenerator:
         list_food_garnish = self._randomize(period_eating_time, [], garnish, list(garnish))
         dict_food_meat = {}
         list_food_meat = []
-        for garnish in list_food_garnish:
-            new_meat_for_garnish = self._randomize(garnish.eating_time, list_food_garnish, meat, list(meat))
+        for garnish_from_list in list_food_garnish:
+            new_meat_for_garnish = self._randomize(garnish_from_list.eating_time, list_food_garnish, meat, list(meat))
             list_food_meat += new_meat_for_garnish
-            dict_food_meat[garnish.name] = new_meat_for_garnish
-        # list_food_others = [random.choice(fruits), random.choice(salads), random.choice(snacks), random.choice(desserts)]
+            dict_food_meat[garnish_from_list.name] = new_meat_for_garnish
+        unused_garnish = list(garnish)
+        for used_garnish in list_food_garnish:
+            if used_garnish in unused_garnish:
+                unused_garnish.remove(used_garnish)
 
+        for garnish_from_dict in dict_food_meat.keys():
+            if len(dict_food_meat[garnish_from_dict]) > 1:
+                for meat_index in range(1, len(dict_food_meat[garnish_from_dict])):
+                    if unused_garnish == []:
+                        unused_garnish = list(garnish)
+                    suitable_unused_garnish = self._count_eating_time(unused_garnish, dict_food_meat[garnish_from_dict][meat_index].eating_time)
+                    # if suitable_unused_garnish == []:
+                    #     unused_garnish = list(garnish)
+                    #     suitable_unused_garnish = self._count_eating_time(unused_garnish, dict_food_meat[garnish_from_dict][meat_index].eating_time)
+                    dict_food_meat[random.choice(suitable_unused_garnish)] = dict_food_meat[garnish_from_dict][meat_index]
+                dict_food_meat[garnish_from_dict] = list(dict_food_meat[garnish_from_dict][0])
+
+        print(desserts)
         list_food_others = [random.choice(fruits), random.choice(salads), random.choice(snacks), random.choice(desserts)]
 
         shedule = self._lists_of_food_to_string(list_food_breakfasts, dict_food_meat, list_food_garnish, list_food_others)
