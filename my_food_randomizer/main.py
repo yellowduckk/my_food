@@ -16,6 +16,7 @@ def main():
     all_food_devices = []
     calendar = Calendar(language=RUSSIAN_LANGUAGE)
     calendar_callback = CallbackData("calendar", "action", "year", "month", "day")
+    keyboard = telebot.types.InlineKeyboardMarkup(row_width=1)
     for device in FoodDevice:
         all_food_devices.append(device.value)
 
@@ -25,19 +26,22 @@ def main():
         if chat_id not in users.keys():
             users[chat_id] = all_food_devices
         devices = "\n-".join(users[chat_id])
+        button_shedule = telebot.types.InlineKeyboardButton(text="Создать расписание", callback_data="shedule")
+        button_red_devices = telebot.types.InlineKeyboardButton(text="Изменить список девайсов", callback_data="red_devices")
+        keyboard.add(button_shedule, button_red_devices)
         bot.reply_to(message, f"Привет!"
                               f"\n    Пропиши команду <b>[/shedule]</b>, чтобы составить расписание на неделю\n"
                               f"    Блюда в меню могут быть приготовлены с помощью этих девайсов:\n-{devices}\n"
                               f"Все ли эти девайсы есть у вас в наличии?\n"
                               f"    Если нет, пропишите команду \n<b>[/red_devices девайс девайс девайс]</b> в таком формате, вписывая названия девайсов,"
                               f" которых у вас нет\n"
-                              f"    Если вы хотите восстановить список девайсов, то пропишите команду <b>[/reset_devices]</b>", parse_mode="HTML")
+                              f"    Если вы хотите восстановить список девайсов, то пропишите команду <b>[/reset_devices]</b>", parse_mode="HTML", reply_markup=keyboard)
         # users[chat_id] = ["духовка", "плита", "аэрогриль", "холодильник", "микроволновка", "мультиварка"]
 
 
-    @bot.message_handler(commands=['shedule'])
-    def shedule(message):
-        chat_id = message.chat.id
+    @bot.callback_query_handler(func=lambda call: call.data == "shedule")
+    def shedule(call):
+        chat_id = call.message.chat.id
         if chat_id not in users.keys():
             users[chat_id] = all_food_devices
         devices = "\n-".join(users[chat_id])
