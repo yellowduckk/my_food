@@ -18,6 +18,9 @@ def main():
     calendar = Calendar(language=RUSSIAN_LANGUAGE)
     calendar_callback = CallbackData("calendar", "action", "year", "month", "day")
     # keyboard = telebot.types.InlineKeyboardMarkup(row_width=1)
+    button_shedule = telebot.types.InlineKeyboardButton(text="Создать расписание", callback_data="shedule")
+    button_red_devices = telebot.types.InlineKeyboardButton(text="Изменить список девайсов",
+                                                            callback_data="red_devices")
     for device in FoodDevice:
         all_food_devices.append(device.value)
 
@@ -25,15 +28,15 @@ def main():
     def send_welcome(message):
         chat_id = message.chat.id
         keyboard = telebot.types.InlineKeyboardMarkup(row_width=1)
+        keyboard.add(button_shedule, button_red_devices)
         if chat_id not in users.keys():
             users[chat_id] = all_food_devices
         devices = "\n-".join(users[chat_id])
         # message_reply = bot.reply_to(message, f"Привет!\n"
         #                       f"    Блюда в меню могут быть приготовлены с помощью этих девайсов:\n-{devices}\n"
         #                       f"Все ли эти девайсы есть у вас в наличии?\n", parse_mode="HTML")
-        button_shedule = telebot.types.InlineKeyboardButton(text="Создать расписание", callback_data="shedule")
-        button_red_devices = telebot.types.InlineKeyboardButton(text="Изменить список девайсов", callback_data="red_devices")
-        keyboard.add(button_shedule, button_red_devices)
+        # button_shedule = telebot.types.InlineKeyboardButton(text="Создать расписание", callback_data="shedule")
+        # button_red_devices = telebot.types.InlineKeyboardButton(text="Изменить список девайсов", callback_data="red_devices")
         # bot.edit_message_reply_markup(chat_id, message_reply.message_id, reply_markup=keyboard)
         bot.reply_to(message, f"Привет!\n"
                           f"    Блюда в меню могут быть приготовлены с помощью этих девайсов:\n-{devices}\n"
@@ -69,6 +72,8 @@ def main():
 
     @bot.poll_answer_handler()
     def handle_poll(poll):
+        keyboard = telebot.types.InlineKeyboardMarkup(row_width=1)
+        keyboard.add(button_shedule, button_red_devices)
         chat_id = poll.user.id
         selected_options_ids = poll.option_ids
         selected_devices = []
@@ -81,7 +86,7 @@ def main():
         users[chat_id] = selected_devices
         devices = "\n-".join(selected_devices)
         bot.stop_poll(chat_id=chat_id, message_id=polls_messages_ids[chat_id])
-        bot.send_message(chat_id, f"Выбраны девайсы:\n-{devices}")
+        bot.send_message(chat_id, f"Выбраны девайсы:\n-{devices}", reply_markup=keyboard)
 
 
     # @bot.message_handler(commands=['red_devices'])
@@ -106,15 +111,17 @@ def main():
     @bot.callback_query_handler(func=lambda call: call.data.startswith(calendar_callback.prefix))
     def callback_inline(call: types.CallbackQuery):
         chat_id = call.from_user.id
+        keyboard = telebot.types.InlineKeyboardMarkup(row_width=1)
+        keyboard.add(button_shedule, button_red_devices)
         today_date = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
         name, action, year, month, day = call.data.split(calendar_callback.sep)
         # print(calendar_callback, calendar_callback.prefix, name, action, year, month, day)
         date = calendar.calendar_query_handler(bot=bot, call=call, name=name, action=action, year=year, month=month, day=day)
         if action == "DAY":
-            if date >= today_date:
+            days_to_date = (date - today_date).days + 1
+            if date >= today_date and days_to_date <= 30:
                 # error_days = 2
                 # if date == today_date:
-                days_to_date = (date - today_date).days + 1
                 # print((date - today_date).days)
                 # print(date, today_date)
                 bot.send_message(chat_id, f"Выбрана дата {date.strftime('%d.%m.%Y')}, расписание будет составлено на {days_to_date} дней", reply_markup=types.ReplyKeyboardRemove())
@@ -138,7 +145,7 @@ def main():
                 list_of_food = week_gen.get_shedule(days_to_date, food_devices, preferences)
                 print(list_of_food)
                 print(days_to_date)
-                bot.send_message(chat_id, list_of_food, parse_mode="HTML")
+                bot.send_message(chat_id, list_of_food, parse_mode="HTML", reply_markup=keyboard)
             # elif date.strftime('%d.%m.%Y') == today_date.strftime('%d.%m.%Y'):
             #     food_devices = []
             #     for device in users[chat_id]:
@@ -149,8 +156,12 @@ def main():
             else:
                 print(date, today_date)
                 bot.send_message(chat_id, "Нельзя выбрать эту дату", reply_markup=types.ReplyKeyboardRemove())
+                bot.send_message(chat_id, "Хотите создать новое расписание или отредактировать список использованых девайсов?", reply_markup=keyboard)
         elif action == "CANCEL":
             bot.send_message(chat_id, "Выбор даты отменён", reply_markup=types.ReplyKeyboardRemove())
+            bot.send_message(chat_id,
+                             "Хотите создать новое расписание или отредактировать список использованых девайсов?",
+                             reply_markup=keyboard)
 
 
 
