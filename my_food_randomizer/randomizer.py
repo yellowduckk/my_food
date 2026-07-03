@@ -58,7 +58,7 @@ class WeekGenerator:
                 return suitable_food
         return list_food
 
-    def _randomize(self, period_eating_time: (int, timedelta), used_food: list[Dish], list_food: list[Dish]) -> List[Dish]:
+    def _randomize(self, period_eating_time: (int, timedelta), used_food: list[Dish], list_food: list[Dish], backup_list_food: list[Dish]) -> List[Dish]:
         """
         :param period_eating_time: время, на которое нужно составить расписание
         :param used_food: еда того же типа, которая уже была использована в расписании
@@ -81,7 +81,10 @@ class WeekGenerator:
         while summary_eating_time < period_eating_time:
             remaining_time = period_eating_time - summary_eating_time
             if list_food == []:
-                return shedule
+                if backup_list_food:
+                    list_food = list(backup_list_food)
+                else:
+                    return shedule
                 # list_food = list(backup_list_food)
                 # if shedule and len(list_food) > 1:
                 #     list_food.remove(shedule[-1])
@@ -121,9 +124,6 @@ class WeekGenerator:
         else:
             list_food_garnish_strings = ["Недостаточно девайсов для приготовления мяса и гарниров"]
             g_string = "\n<b>Блюда:</b>\n"
-
-        # for food in list_food_meat:
-        #     list_food_meat_names.append(food.name)
         if list_food_others:
             for food in list_food_others:
                 list_food_others_names.append(food.name)
@@ -169,20 +169,21 @@ class WeekGenerator:
         print(salads)
         print("--")
 
-        list_food_breakfasts = self._randomize(period_eating_time, [], breakfasts)
+        list_food_breakfasts = self._randomize(period_eating_time, [], list(breakfasts), [])
         if garnish:
-            list_food_garnish = self._randomize(period_eating_time, [], garnish)
+            list_food_garnish = self._randomize(period_eating_time, [], list(garnish), list(garnish))
             if meat:
                 dict_food_meat = {}
                 dict_food_meat_new = {}
                 list_food_meat = []
                 for garnish_from_list in list_food_garnish:
-                    new_meat_for_garnish = self._randomize(garnish_from_list.eating_time, list_food_meat, meat)
+                    new_meat_for_garnish = self._randomize(garnish_from_list.eating_time, list_food_meat, list(meat), [])
                     # print("-", list_food_meat)
                     list_food_meat += new_meat_for_garnish
                     # print("-", new_meat_for_garnish)
                     dict_food_meat[garnish_from_list.name] = new_meat_for_garnish
                 unused_garnish = list(garnish)
+                # print("-", unused_garnish, garnish)
                 for used_garnish in list_food_garnish:
                     if used_garnish in unused_garnish:
                         unused_garnish.remove(used_garnish)
@@ -191,12 +192,12 @@ class WeekGenerator:
                     if len(dict_food_meat[garnish_from_dict]) > 1:
                         for meat_index in range(1, len(dict_food_meat[garnish_from_dict])):
                             if unused_garnish == []:
-                                break
+                                unused_garnish = list(garnish)
                             # print(unused_garnish)
-                            suitable_unused_garnish = self._count_eating_time(unused_garnish, dict_food_meat[garnish_from_dict][meat_index].eating_time)
+                            # suitable_unused_garnish = self._count_eating_time(unused_garnish, dict_food_meat[garnish_from_dict][meat_index].eating_time)
                             # if suitable_unused_garnish == []:
                             #     unused_garnish = list(garnish)
-                            #     suitable_unused_garnish = self._count_eating_time(unused_garnish, dict_food_meat[garnish_from_dict][meat_index].eating_time)
+                            suitable_unused_garnish = self._count_eating_time(unused_garnish, dict_food_meat[garnish_from_dict][meat_index].eating_time)
                             # print(unused_garnish)
                             # print(suitable_unused_garnish)
                             # print(random.choice(suitable_unused_garnish))
@@ -210,7 +211,7 @@ class WeekGenerator:
                 dict_food_meat = {}
         elif meat:
             dict_food_meat = {}
-            dict_food_meat["мясо"] = self._randomize(period_eating_time, [], meat)
+            dict_food_meat["мясо"] = self._randomize(period_eating_time, [], list(meat), [])
             list_food_garnish = []
         else:
             dict_food_meat = {}
