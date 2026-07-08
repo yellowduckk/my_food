@@ -1,7 +1,7 @@
 import random
 from typing import List
 from datetime import timedelta
-from my_food_randomizer.dish_classes import Dish, FoodDevice, Preference
+from my_food_randomizer.dish_classes import Dish, FoodDevice, Preference, FoodType
 
 
 class WeekGenerator:
@@ -100,16 +100,16 @@ class WeekGenerator:
             summary_eating_time += condidate.eating_time
         return shedule, True
 
-    def _lists_of_food_to_string(self, list_food_breakfasts: list[Dish], dict_food_meat: dict[str: Dish], list_food_garnish, list_food_meat,  list_food_others: list[Dish], flag_b, flag_m, flag_o) -> str:
+    def _lists_of_food_to_string(self, list_food_breakfasts: list[Dish], dict_food_meat: dict[str: Dish], list_food_garnish, list_food_meat,  list_food_others: list[Dish], flag_b: bool, flag_g: bool, flag_o: bool, flag_f, flag_sa, flag_sn, flag_d, period_eating_time) -> str:
         list_food_breakfasts_names, list_food_garnish_strings, list_meat_names, list_food_others_names = [], [], [], []
         b_string, g_string, o_string = "", "", ""
         b_string_error, g_string_error, o_string_error = "", "", ""
         if not flag_b:
-            b_string_error = "\n(В базе данных недостаточно блюд такого типа для созднаия расписания на такое время)"
-        if not flag_m:
-            g_string_error = "\n(В базе данных недостаточно блюд такого типа для созднаия расписания на такое время)"
+            b_string_error = f"\n(В базе данных недостаточно завтраков для создания расписания на {period_eating_time} дней)"
+        if not flag_g:
+            g_string_error = f"\n(В базе данных недостаточно добавок к гарнирам для создания расписания на {period_eating_time} дней)"
         if not flag_o:
-            o_string_error = "\n(В базе данных недостаточно блюд такого типа для созднаия расписания на такое время)"
+            o_string_error = f"\n(В базе данных недостаточно  для создания расписания на {period_eating_time} дней)"
         if list_food_breakfasts:
             for food in list_food_breakfasts:
                 list_food_breakfasts_names.append(food.name)
@@ -186,7 +186,7 @@ class WeekGenerator:
         list_food_breakfasts, flag_b = self._randomize(period_eating_time, [], list(breakfasts))
 
         if meat:
-            list_food_meat, flag_m = self._randomize(period_eating_time, [], list(meat))
+            list_food_meat, flag_g = self._randomize(period_eating_time, [], list(meat))
             print(list_food_meat)
             for i in list_food_meat:
                 print(i.name)
@@ -208,17 +208,17 @@ class WeekGenerator:
             else:
                 dict_food_meat = {}
                 list_food_meat = []
-                flag_m = True
+                flag_g = True
                 list_food_garnish = []
         elif garnish:
             dict_food_meat = {}
             list_food_meat = []
-            flag_m = True
+            flag_g = True
             list_food_garnish = self._randomize(period_eating_time, [], list(garnish))
         else:
             dict_food_meat = {}
             list_food_meat = []
-            flag_m = True
+            flag_g = True
             list_food_garnish = []
 
 
@@ -274,11 +274,20 @@ class WeekGenerator:
 
         # print(desserts)
         list_food_others = []
+        list_of_hollow_food_lists = []
         for list_food in [fruits, salads, snacks, desserts]:
             if list_food:
                 list_food_others.append(random.choice(list_food))
-        flag_o = (len(list_food_others) == 4)
+            else:
+                list_food_others.append(list_food)
 
-        shedule = self._lists_of_food_to_string(list_food_breakfasts, dict_food_meat, list_food_garnish, list_food_meat, list_food_others, flag_b, flag_m, flag_o)
+        flag_o = (len(list_food_others) == 4)
+        if flag_o:
+            flag_f = fruits in list_food_others
+            flag_sa = salads in list_food_others
+            flag_sn = snacks in list_food_others
+            flag_d = desserts in list_food_others
+
+        shedule = self._lists_of_food_to_string(list_food_breakfasts, dict_food_meat, list_food_garnish, list_food_meat, list_food_others, flag_b, flag_g, flag_o, flag_f, flag_sn, flag_sa, flag_d, period_eating_time)
 
         return shedule
