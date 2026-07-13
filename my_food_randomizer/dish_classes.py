@@ -31,31 +31,31 @@ from dataclasses import dataclass
 #     SPRING = "весна"
 #     # Расшифровка всех предпочтений
 
-@dataclass(frozen=True)
-class Ingredient:
-    ingredient: str
-    unit_of_measurement: str
-
-@dataclass(frozen=True)
-class FoodType:
-    food_type: str
-
-@dataclass(frozen=True)
-class FoodDevice:
-    food_device: str
-
-@dataclass(frozen=True)
-class Preference:
-    preference: str
-
-@dataclass(frozen=True)
-class Dish:
-    id: int
-    name: str
-    food_type: FoodType
-    preferences: list[Preference]
-    food_device: FoodDevice
-    ingredients: dict
-    cooking_time: timedelta
-    eating_time: timedelta
+# @dataclass(frozen=True)
+# class Ingredient:
+#     ingredient: str
+#     unit_of_measurement: str
+#
+# @dataclass(frozen=True)
+# class FoodType:
+#     food_type: str
+#
+# @dataclass(frozen=True)
+# class FoodDevice:
+#     food_device: str
+#
+# @dataclass(frozen=True)
+# class Preference:
+#     preference: str
+#
+# @dataclass(frozen=True)
+# class Dish:
+#     id: int
+#     name: str
+#     food_type: FoodType
+#     preferences: list[Preference]
+#     food_device: FoodDevice
+#     ingredients: dict
+#     cooking_time: timedelta
+#     eating_time: timedelta
 # Шаблон блюда
