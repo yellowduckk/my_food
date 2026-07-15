@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from my_food_randomizer.dish_classes import Dish
+# from my_food_randomizer.dish_classes import Dish
 
 
 def load_dish():

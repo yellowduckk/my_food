@@ -1,7 +1,7 @@
 import random
 from typing import List
 from datetime import timedelta
-from my_food_randomizer.dish_classes import Dish, FoodDevice, Preference, FoodType
+# from my_food_randomizer.dish_classes import Dish, FoodDevice, Preference, FoodType
 
 
 class WeekGenerator:

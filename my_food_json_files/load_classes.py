@@ -3,11 +3,16 @@ from pathlib import Path
 
 from my_food_json_files.dish_classes import Dish, Ingredient, Preference, FoodType, Device
 
-def load_ingredients():
+
+def load_ingredients() -> Ingredient:
+    """
+    :return: обернутые в класс ингредиенты
+    """
     with open(Path(Path(__file__).parent, "ingredients.json"), "r", encoding="utf-8") as file:
         ingredients = json.load(file)
+    result_ingredient = [Ingredient(**ingredient) for ingredient in ingredients["ingredients"]]
 
-    return [Ingredient(**ingredient) for ingredient in ingredients["ingredients"]]
+    return result_ingredient
 
 
 def load_preferences():
@@ -30,7 +35,7 @@ def load_food_devices():
 
     return [Device(device) for device in devices["food_devices"]]
 
-print(load_ingredients())
-print(load_preferences())
-print(load_food_types())
-print(load_food_devices())
+# print(load_ingredients())
+# print(load_preferences())
+# print(load_food_types())
+# print(load_food_devices())

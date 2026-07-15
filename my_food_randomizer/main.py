@@ -1,10 +1,10 @@
-from my_food_randomizer.dish_classes import FoodDevice, Preference
-from my_food_randomizer.load_dishes import load_dish
-from my_food_randomizer.randomizer import WeekGenerator
+
 import telebot
 from telebot import types
 from telebot_calendar import Calendar, CallbackData, RUSSIAN_LANGUAGE
 import datetime
+
+from my_food_json_files.load_classes import load_ingredients
 
 bot = telebot.TeleBot("8957694347:AAFIMl1W8lkPp1JcVgd9b_rBnipFk7-x_xo")
 
@@ -32,12 +32,6 @@ def main():
         if chat_id not in users.keys():
             users[chat_id] = all_food_devices
         devices = "\n-".join(users[chat_id])
-        # message_reply = bot.reply_to(message, f"Привет!\n"
-        #                       f"    Блюда в меню могут быть приготовлены с помощью этих девайсов:\n-{devices}\n"
-        #                       f"Все ли эти девайсы есть у вас в наличии?\n", parse_mode="HTML")
-        # button_shedule = telebot.types.InlineKeyboardButton(text="Создать расписание", callback_data="shedule")
-        # button_red_devices = telebot.types.InlineKeyboardButton(text="Изменить список девайсов", callback_data="red_devices")
-        # bot.edit_message_reply_markup(chat_id, message_reply.message_id, reply_markup=keyboard)
         bot.reply_to(message, f"Привет!\n"
                           f"    Блюда в меню могут быть приготовлены с помощью этих девайсов:\n-{devices}\n"
                           f"Все ли эти девайсы есть у вас в наличии?\n", parse_mode="HTML", reply_markup=keyboard)
@@ -89,25 +83,6 @@ def main():
         bot.send_message(chat_id, f"Выбраны девайсы:\n-{devices}", reply_markup=keyboard)
 
 
-    # @bot.message_handler(commands=['red_devices'])
-    # def red_devices(message):
-    #     devices_to_redact = message.text.split(' ')[1:]
-    #     chat_id = message.chat.id
-    #     removed_devices = []
-    #     if chat_id not in users.keys():
-    #         users[chat_id] = all_food_devices
-    #     for device in devices_to_redact:
-    #         if device in users[chat_id]:
-    #             users[chat_id].remove(device)
-    #             removed_devices.append(device)
-    #     removed_devices = "\n-".join(removed_devices)
-    #     if removed_devices:
-    #         bot.send_message(chat_id, f"    Редактирование завершено,\n"
-    #                                           f"убраны девайсы:\n"
-    #                                           f"-{removed_devices}\n")
-    #     else:
-    #         bot.send_message(chat_id, "Редактирование завершено, ничего не изменилось")
-
     @bot.callback_query_handler(func=lambda call: call.data.startswith(calendar_callback.prefix))
     def callback_inline(call: types.CallbackQuery):
         chat_id = call.from_user.id
@@ -120,10 +95,6 @@ def main():
         if action == "DAY":
             days_to_date = (date - today_date).days + 1
             if date >= today_date and days_to_date <= 30:
-                # error_days = 2
-                # if date == today_date:
-                # print((date - today_date).days)
-                # print(date, today_date)
                 bot.send_message(chat_id, f"Выбрана дата {date.strftime('%d.%m.%Y')}, расписание будет составлено на {days_to_date} дней", reply_markup=types.ReplyKeyboardRemove())
                 months_to_date = (date.year - today_date.year) * 12 + date.month - today_date.month + 1
                 seasons = set()
@@ -146,13 +117,7 @@ def main():
                 print(list_of_food)
                 print(days_to_date)
                 bot.send_message(chat_id, list_of_food, parse_mode="HTML", reply_markup=keyboard)
-            # elif date.strftime('%d.%m.%Y') == today_date.strftime('%d.%m.%Y'):
-            #     food_devices = []
-            #     for device in users[chat_id]:
-            #         food_devices.append(FoodDevice(device))
-            #     preferences = [Preference(months_numbers_to_seasons[date.month])]
-            #     list_of_food = week_gen.get_shedule(1, food_devices, preferences)
-            #     bot.send_message(chat_id, list_of_food, parse_mode="HTML")
+
             else:
                 print(date, today_date)
                 bot.send_message(chat_id, "Нельзя выбрать эту дату", reply_markup=types.ReplyKeyboardRemove())
@@ -164,43 +129,8 @@ def main():
                              reply_markup=keyboard)
 
 
-
-        # list_of_food = wg.get_shedule(7, [FoodDevice("духовка"), FoodDevice("плита"), FoodDevice("аэрогриль"), FoodDevice("холодильник"), FoodDevice("микроволновка"), FoodDevice("мультиварка")], Preference("лето"))
-        # raspisanie = ""
-        # for food_type in list_of_food:
-        #     for food in food_type:
-        #         raspisanie = raspisanie + food.name + "\n"
-        #     # print(*food, sep="\n")
-        #     # print("----")
-        # bot.send_message(message.chat.id, raspisanie)
-
-    # @bot.message_handler(commands=['reset_devices'])
-    # def red_devices(message):
-    #     chat_id = message.chat.id
-    #     users[chat_id] = all_food_devices
-    #     bot.send_message(chat_id, "Список девайсов восстановлен")
-
-
-    # @bot.callback_query_handler(func=lambda call: call.data == "yes")
-    # def callback_yes(call):
-    #     message = call.message
-    #     chat_id = message.chat.id
-    #     # bot.send_message(message.chat.id, "Круто")
-    #     # bot.edit_message_text(chat_id=chat_id, message_id=message.message_id,
-    #     #                       text=f"Блюда в меню могут быть приготовлены с помощью этих девайсов:\n{all_food_devices}Все ли эти девайсы есть у вас в наличии?")
-    #
-    #
-    # @bot.callback_query_handler(func=lambda call: call.data == "no")
-    # def callback_no(call):
-    #     message = call.message
-    #     chat_id = message.chat.id
-    #     # bot.send_message(message.chat.id, "Не круто")
-    #     # bot.edit_message_text(chat_id=chat_id, message_id=message.message_id,
-    #     #                       text=f"Блюда в меню могут быть приготовлены с помощью этих девайсов:\n{all_food_devices}Все ли эти девайсы есть у вас в наличии?")
-
-
-
     bot.infinity_polling()
 
 if __name__ == '__main__':
-    main()
+    load_ingredients()
+    #main()
