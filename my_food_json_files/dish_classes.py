@@ -21,7 +21,7 @@ class FoodType:
 class Dish:
     id: int
     name: str
-    food_type: list[FoodType]
+    food_type: FoodType
     preferences: list[Preference]
     food_device: Device
     ingredients: dict[Ingredient: int]

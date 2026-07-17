@@ -2,7 +2,9 @@ from random import random
 import json
 from pathlib import Path
 from typing import List
-from my_food_json_files.dish_classes import Dish, Ingredient, Preference, FoodType, Device
+from dataclasses import asdict
+from load_classes import *
+
 
 class AddDish:
     def __init__(self, dishes: List[Dish], ingredients: List[Ingredient], preferences: List[Preference], food_types: List[FoodType], devices: List[Device]):
@@ -12,17 +14,13 @@ class AddDish:
         self.food_types = food_types
         self.devices = devices
 
-    def generate_names(self, massive):
-        for element in massive:
-            yield element.name
-
-
-    def add_dish(self):
-        dishes_names = [self.generate_names(self.dishes)]
-        ingredients_names = [self.generate_names(self.ingredients)]
-        preferences_names = [self.generate_names(self.preferences)]
-        food_types_names = [self.generate_names(self.food_types)]
-        devices_names = [self.generate_names(self.devices)]
+    def add_d(self):
+        dishes_names = [dish.name for dish in self.dishes]
+        ingredients_names = [ingredient.name for ingredient in self.ingredients]
+        preferences_names = [preference.name for preference in self.preferences]
+        food_types_names = [food_type.name for food_type in self.food_types]
+        devices_names = [device.name for device in self.devices]
+        print(ingredients_names)
         dish_dict = {}
 
         while True:
@@ -36,7 +34,9 @@ class AddDish:
                 dish_dict["name"] = name
             food_type = input("Введите тип блюда: ")
             if food_type not in food_types_names:
-                FoodType(food_type)
+                print("Такого блюда нет")
+                continue
+                # FoodType(food_type)
             dish_dict["food_type"] = self.food_types[food_types_names.index(food_type)]
             dish_dict["preferences"] = []
             while True:
@@ -49,29 +49,30 @@ class AddDish:
                     print("Нельзя ввести новое предпочтение")
             food_device = input("Введите название девайса, на котором можно приготовить это блюдо: ")
             if food_device not in devices_names:
-                Device(food_device)
+                print("Такого девайса нет")
+                continue
             dish_dict["food_device"] = self.devices[devices_names.index(food_device)]
             dish_dict["ingredients"] = {}
             while True:
-                ingredient = input("Введите ингридиент: ")
+                ingredient = input("Введите ингредиент: ")
                 if ingredient == "":
                     break
                 elif ingredient not in ingredients_names:
-                    unit = input("Введите еденицу измерения количества ингридиента: ")
-                    Ingredient(**{"name": ingredient, "unit": unit})
+                    # unit = input("Введите единицу измерения количества ингредиента: ")
+                    # Ingredient(**{"name": ingredient, "unit": unit})
+                    print("Нельзя ввести данный ингредиент")
+                    continue
                 quantity = int(input(f"Введите объём/вес/количество {ingredient}: "))
                 dish_dict["ingredients"][self.ingredients[ingredients_names.index(ingredient)]] = quantity
             dish_dict["cooking_time"] = int(input("Введите время приготовления блюда: "))
             dish_dict["eating_time"] = int(input("Введите время, за которое это блюдо будет съедено: "))
             break
-        with open(Path(Path(__file__).parent, "ingredients.json"), "r", encoding="utf-8") as file:
-            dishes_json = json.load(file)
-            dishes_json.append(dish_dict)
-            json.dump(dishes_json, file, ensure_ascii=False, indent=4)
-        print(*dish_dict, sep="\n")
+        # with open(Path(Path(__file__).parent, "dishes.json"), "r", encoding="utf-8") as file:
+        #     dishes_json = json.load(file)
+        # with open(Path(Path(__file__).parent, "dishes.json"), "r+", encoding="utf-8") as file:
+        #     dishes_json["dishes"].append(dish_dict)
+        #     json.dump(dishes_json, file, ensure_ascii=False, indent=4, default=asdict)
+        # for key in dish_dict.keys():
+        #     print(f"{key}: {dish_dict[key]}")
 
-AddDish(Dish, Ingredient, Preference, FoodType, Device).add_dish()
-
-
-
-
+AddDish(load_dish(), load_ingredients(), load_preferences(), load_food_types(), load_food_devices()).add_d()
