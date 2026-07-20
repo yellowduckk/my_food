@@ -3,58 +3,101 @@ from pathlib import Path
 
 from my_food_json_files.dish_classes import Dish, Ingredient, Preference, FoodType, Device
 
+class dish_loader:
+    def __init__(self):
+        self.preferences = []
+        self.food_types = []
+        self.devices = []
+        self.ingredients = []
 
-def load_ingredients() -> list[Ingredient]:
-    """
-    :return: обернутые в класс ингредиенты
-    """
-    with open(Path(Path(__file__).parent, "ingredients.json"), "r", encoding="utf-8") as file:
-        ingredients = json.load(file)
-    result_ingredient = [Ingredient(**ingredient) for ingredient in ingredients["ingredients"]]
+    def load_ingredients(self) -> list[Ingredient]:
+        """
+        :return: обернутые в класс ингредиенты
+        """
+        with open(Path(Path(__file__).parent, "ingredients.json"), "r", encoding="utf-8") as file:
+            ingredients = json.load(file)
+        result_ingredient = [Ingredient(**ingredient) for ingredient in ingredients["ingredients"]]
+        self.ingredients = result_ingredient
 
-    return result_ingredient
+        return result_ingredient
 
-def load_preferences() -> list[Preference]:
-    """
-    :return: обёрнутые ы класс сезонные предпочтения
-    """
-    with open(Path(Path(__file__).parent, "preferences.json"), "r", encoding="utf-8") as file:
-        preferences = json.load(file)
-    result_preferences = [Preference(preference) for preference in preferences["preferences"]]
+    def load_preferences(self) -> list[Preference]:
+        """
+        :return: обёрнутые ы класс сезонные предпочтения
+        """
+        with open(Path(Path(__file__).parent, "preferences.json"), "r", encoding="utf-8") as file:
+            preferences = json.load(file)
+        result_preferences = [Preference(preference) for preference in preferences["preferences"]]
+        self.preferences = result_preferences
 
-    return result_preferences
+        return result_preferences
 
-def load_food_types() -> list[FoodType]:
-    """
-    :return: обёрнутые в класс типы еды
-    """
-    with open(Path(Path(__file__).parent, "food_types.json"), "r", encoding="utf-8") as file:
-        food_types = json.load(file)
-    result_food_types = [FoodType(food_type) for food_type in food_types["food_types"]]
+    def load_food_types(self) -> list[FoodType]:
+        """
+        :return: обёрнутые в класс типы еды
+        """
+        with open(Path(Path(__file__).parent, "food_types.json"), "r", encoding="utf-8") as file:
+            food_types = json.load(file)
+        result_food_types = [FoodType(food_type) for food_type in food_types["food_types"]]
+        self.food_types = result_food_types
 
-    return result_food_types
+        return result_food_types
 
-def load_food_devices() -> list[Device]:
-    """
-    :return: обёрнутые в класс девайсы для приготовления еды
-    """
-    with open(Path(Path(__file__).parent, "food_devices.json"), "r", encoding="utf-8") as file:
-        devices = json.load(file)
-    result_devices = [Device(device) for device in devices["food_devices"]]
+    def load_food_devices(self) -> list[Device]:
+        """
+        :return: обёрнутые в класс девайсы для приготовления еды
+        """
+        with open(Path(Path(__file__).parent, "food_devices.json"), "r", encoding="utf-8") as file:
+            devices = json.load(file)
+        result_devices = [Device(device) for device in devices["food_devices"]]
+        self.devices = result_devices
+        print(self.devices)
 
-    return result_devices
+        return result_devices
 
-def load_dish():
-    """
-    :return: обёрнутые в класс блюда
-    """
-    with open(Path(Path(__file__).parent, "dishes.json"), "r", encoding="utf-8") as file:
-        dishes = json.load(file)
-    result_dish = [Dish(**dish) for dish in dishes["dishes"]]
+    def find_with_name(self, massive: list[FoodType|Device|Preference|Ingredient], name: str) -> FoodType|Device|Preference|Ingredient|None:
+        """
+        :param massive: массив, где надо найти объект с соответсвующим наименованием
+        :param name: наименование
+        :return: объект с соответсвтующим наименованием или None
+        """
+        for element in massive:
+            # print(element.name)
+            if element.name == name:
 
-    return result_dish
+                return element
+        return None
 
-# print(load_ingredients())
-# print(load_preferences())
-# print(load_food_types())
-# print(load_food_devices())
+
+    def load_dish(self) -> list[Dish]:
+        """
+        :return: обёрнутые в класс блюда
+        """
+        self.load_food_types()
+        self.load_food_devices()
+        self.load_preferences()
+        self.load_ingredients()
+        with open(Path(Path(__file__).parent, "dishes.json"), "r", encoding="utf-8") as file:
+            dishes = json.load(file)
+        result_dish = []
+        for dish in dishes["dishes"]:
+            dish["food_type"] = self.find_with_name(self.food_types, dish["food_type"])
+            for index in range(0, len(dish["preferences"])):
+                dish["preferences"][index] = self.find_with_name(self.preferences, dish["preferences"][index])
+            dish["food_device"] = self.find_with_name(self.devices, dish["food_device"])
+            dish_ingredients_keys = list(dish["ingredients"].keys())
+            dict_ingredients = {}
+            for index in range(0, len(dish_ingredients_keys)):
+                full_index = dish_ingredients_keys[index]
+                dict_ingredients[self.find_with_name(self.ingredients, full_index)] = dish["ingredients"][full_index]
+            dish["ingredients"] = dict_ingredients
+                # dish["ingredients"][full_index] = self.find_with_name(self.ingredients, dish["ingredients"][full_index])
+            result_dish.append(Dish(**dish))
+            # result_dish = [Dish(**dish) for dish in dishes["dishes"]]
+        return result_dish
+
+print(dish_loader().load_food_types())
+dish_loader().load_food_devices()
+dish_loader().load_preferences()
+dish_loader().load_ingredients()
+print(dish_loader().load_dish())
