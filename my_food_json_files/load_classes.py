@@ -71,7 +71,7 @@ class dish_loader:
 
     def load_dish(self) -> list[Dish]:
         """
-        :return: обёрнутые в класс блюда
+        :return: обёрнутые в класс блюда c объектами вместо имён в параметрах food_type, preferences, food_device, ingredients
         """
         self.load_food_types()
         self.load_food_devices()
@@ -95,9 +95,3 @@ class dish_loader:
             result_dish.append(Dish(**dish))
             # result_dish = [Dish(**dish) for dish in dishes["dishes"]]
         return result_dish
-
-print(dish_loader().load_food_types())
-dish_loader().load_food_devices()
-dish_loader().load_preferences()
-dish_loader().load_ingredients()
-print(dish_loader().load_dish())
