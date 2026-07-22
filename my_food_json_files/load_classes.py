@@ -3,7 +3,7 @@ from pathlib import Path
 
 from my_food_json_files.dish_classes import Dish, Ingredient, Preference, FoodType, Device
 
-class dish_loader:
+class DishLoader:
     def __init__(self):
         self.preferences = []
         self.food_types = []
@@ -51,7 +51,6 @@ class dish_loader:
             devices = json.load(file)
         result_devices = [Device(device) for device in devices["food_devices"]]
         self.devices = result_devices
-        print(self.devices)
 
         return result_devices
 
@@ -62,7 +61,6 @@ class dish_loader:
         :return: объект с соответсвтующим наименованием или None
         """
         for element in massive:
-            # print(element.name)
             if element.name == name:
 
                 return element
@@ -91,7 +89,5 @@ class dish_loader:
                 full_index = dish_ingredients_keys[index]
                 dict_ingredients[self.find_with_name(self.ingredients, full_index)] = dish["ingredients"][full_index]
             dish["ingredients"] = dict_ingredients
-                # dish["ingredients"][full_index] = self.find_with_name(self.ingredients, dish["ingredients"][full_index])
             result_dish.append(Dish(**dish))
-            # result_dish = [Dish(**dish) for dish in dishes["dishes"]]
         return result_dish

@@ -1,8 +1,8 @@
 import json
 from pathlib import Path
 from typing import List
-from load_classes import dish_loader
-from dish_classes import *
+from my_food_json_files.load_classes import DishLoader
+from my_food_json_files.dish_classes import *
 
 
 class AddDish:

@@ -1,7 +1,7 @@
 import random
 from typing import List
 from datetime import timedelta
-# from my_food_randomizer.dish_classes import Dish, FoodDevice, Preference, FoodType
+from my_food_json_files import Dish, FoodType, Preference, Device, Ingredient
 
 
 class WeekGenerator:
@@ -9,7 +9,7 @@ class WeekGenerator:
         self.dishes = dishes # Вся еда
 
 
-    def _get_candidates(self, preferences: list[Preference], food_device: list[FoodDevice]) -> list[Dish]:
+    def _get_candidates(self, preferences: list[Preference], food_device: list[Device]) -> list[Dish]:
         """
         :param preference: предпочтения в еде
         :param food_device: устройство, на котором готовят блюдо
@@ -148,7 +148,7 @@ class WeekGenerator:
         shedule = b_string + "\n- ".join(list_food_breakfasts_names) + b_string_error + g_string + "\n- ".join(list_food_garnish_strings) + g_string_error + o_string + "\n- ".join(list_food_others_names) + o_string_error
         return shedule
 
-    def get_shedule(self, period_eating_time: int, food_devices: list[FoodDevice], preference: list[Preference]) -> str:
+    def get_shedule(self, period_eating_time: int, food_devices: list[Device], preference: list[Preference]) -> str:
         """
         :param period_eating_time: время, на которое нужно составить расписание
         :param food_devices: девайсы, которые можно использовать в готовке
@@ -221,58 +221,6 @@ class WeekGenerator:
             flag_g = True
             list_food_garnish = []
 
-
-        # if garnish:
-        #     list_food_garnish = self._randomize(period_eating_time, [], list(garnish), list(garnish))
-        #     if meat:
-        #         dict_food_meat = {}
-        #         dict_food_meat_new = {}
-        #         list_food_meat = []
-        #         for garnish_from_list in list_food_garnish:
-        #             new_meat_for_garnish = self._randomize(garnish_from_list.eating_time, list_food_meat, list(meat), [])
-        #             # print("-", list_food_meat)
-        #             list_food_meat += new_meat_for_garnish
-        #             # print("-", new_meat_for_garnish)
-        #             dict_food_meat[garnish_from_list.name] = new_meat_for_garnish
-        #             print(list_food_meat)
-        #             if list_food_meat == meat:
-        #                 break
-        #         unused_garnish = list(garnish)
-        #         # print("-", unused_garnish, garnish)
-        #         for used_garnish in list_food_garnish:
-        #             if used_garnish in unused_garnish:
-        #                 unused_garnish.remove(used_garnish)
-        #
-        #         for garnish_from_dict in dict_food_meat.keys():
-        #             if len(dict_food_meat[garnish_from_dict]) > 1:
-        #                 for meat_index in range(1, len(dict_food_meat[garnish_from_dict])):
-        #                     if unused_garnish == []:
-        #                         unused_garnish = list(garnish)
-        #                     # print(unused_garnish)
-        #                     # suitable_unused_garnish = self._count_eating_time(unused_garnish, dict_food_meat[garnish_from_dict][meat_index].eating_time)
-        #                     # if suitable_unused_garnish == []:
-        #                     #     unused_garnish = list(garnish)
-        #                     suitable_unused_garnish = self._count_eating_time(unused_garnish, dict_food_meat[garnish_from_dict][meat_index].eating_time)
-        #                     # print(unused_garnish)
-        #                     # print(suitable_unused_garnish)
-        #                     # print(random.choice(suitable_unused_garnish))
-        #                     suitable_unused_garnish_choised = random.choice(suitable_unused_garnish)
-        #                     dict_food_meat_new[suitable_unused_garnish_choised.name] = dict_food_meat[garnish_from_dict][meat_index]
-        #                     unused_garnish.remove(suitable_unused_garnish_choised)
-        #                 # print(list(dict_food_meat[garnish_from_dict]))
-        #                 dict_food_meat[garnish_from_dict] = [dict_food_meat[garnish_from_dict][0]]
-        #         dict_food_meat = dict_food_meat_new | dict_food_meat
-        #     else:
-        #         dict_food_meat = {}
-        # elif meat:
-        #     dict_food_meat = {}
-        #     dict_food_meat["мясо"] = self._randomize(period_eating_time, [], list(meat), [])
-        #     list_food_garnish = []
-        # else:
-        #     dict_food_meat = {}
-        #     list_food_garnish = []
-
-        # print(desserts)
         list_food_others = []
         list_of_hollow_food_lists = []
         for list_food in [fruits, salads, snacks, desserts]:
