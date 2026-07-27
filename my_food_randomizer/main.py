@@ -21,8 +21,14 @@ def main():
     dish_loader = DishLoader()
     dish_adder = AddDish(dish_loader.load_dish(), dish_loader.load_ingredients(), dish_loader.load_preferences(), dish_loader.load_food_types(), dish_loader.load_food_devices())
     week_gen = WeekGenerator(dishes)
+
     food_types = DishLoader().load_food_types()
     food_types_names = [food_type.name for food_type in food_types]
+    preferences = DishLoader().load_preferences()
+    preferences_names = [preference.name for preference in preferences]
+    ingredients = DishLoader().load_ingredients()
+    ingredients_names = [ingredient.name for ingredient in ingredients]
+
     months_numbers_to_seasons = {1: "зима", 2: "зима", 3: "весна", 4: "весна", 5: "весна", 6: "лето", 7: "лето", 8: "лето", 9: "осень", 10: "осень", 11: "осень", 12: "зима"}
     polls_messages_ids = {}
     polls_messages_ids_for_dish_adding = {}
@@ -51,6 +57,7 @@ def main():
         bot.reply_to(message, f"Привет!\n"
                           f"    Блюда в меню могут быть приготовлены с помощью этих девайсов:\n-{devices}\n"
                           f"Все ли эти девайсы есть у вас в наличии?\n", parse_mode="HTML", reply_markup=keyboard)
+        print(message.from_user.id, chat_id)
 
     @bot.callback_query_handler(func=lambda call: call.data == "shedule", state=DishAdderStates.starting)
     def shedule(call):
@@ -71,9 +78,10 @@ def main():
     @bot.callback_query_handler(func=lambda call: call.data == "add_dish", state=DishAdderStates.starting)
     def begin_dish_adding(call):
         chat_id = call.message.chat.id
-        bot.set_state(call.message.from_user.id, DishAdderStates.dish_naming, chat_id)
+        bot.set_state(call.from_user.id, DishAdderStates.dish_naming, chat_id)
         bot.send_message(chat_id, f"Введите название нового блюда\n"
                                   f"Оно не должно совпадать с названиями имеющихся блюд:\n-{"\n-".join(dishes_names)}", parse_mode="HTML")
+        print(bot.get_state(call.from_user.id, chat_id))
 
     @bot.poll_answer_handler(state=DishAdderStates.starting)
     def handle_poll(poll):
@@ -89,7 +97,6 @@ def main():
         devices = "\n-".join(selected_devices)
         bot.stop_poll(chat_id=chat_id, message_id=polls_messages_ids[chat_id])
         bot.send_message(chat_id, f"Выбраны девайсы:\n-{devices}", reply_markup=keyboard)
-
 
     @bot.callback_query_handler(func=lambda call: call.data.startswith(calendar_callback.prefix), state=DishAdderStates.starting)
     def callback_inline(call: types.CallbackQuery):
@@ -122,7 +129,6 @@ def main():
                 print(list_of_food)
                 print(days_to_date)
                 bot.send_message(chat_id, list_of_food, parse_mode="HTML", reply_markup=keyboard)
-
             else:
                 print(date, today_date)
                 bot.send_message(chat_id, "Нельзя выбрать эту дату", reply_markup=types.ReplyKeyboardRemove())
@@ -154,26 +160,125 @@ def main():
     @bot.poll_answer_handler(state=DishAdderStates.type_selecting)
     def handle_poll(poll):
         chat_id = poll.user.id
-        selected_options_id = poll.option_ids
-        options = poll.data
-        selected_type = options[selected_options_id]
-        if selected_type == "другое":
-            bot.set_state(poll.from_user.id, DishAdderStates.type_naming, chat_id)
-            bot.send_message(chat_id, "Введите тип блюда")
-        else:
+        selected_option_id = poll.option_ids[0]
+        print(selected_option_id)
+        try:
+            selected_type = food_types_names[selected_option_id]
             users_dishes[chat_id].append(selected_type)
-            bot.set_state(poll.from_user.id, DishAdderStates.preferences_selecting, chat_id)
-            pass
-        bot.stop_poll(chat_id=chat_id, message_id=polls_messages_ids[chat_id])
+            bot.set_state(chat_id, DishAdderStates.preferences_selecting, chat_id)
+            poll_message = bot.send_poll(chat_id=chat_id, question="Выберете времена года, в которые можно есть ваше блюдо",
+                                         options=preferences_names, is_anonymous=False, allows_multiple_answers=True)
+            bot.stop_poll(chat_id=chat_id, message_id=polls_messages_ids_for_dish_adding[chat_id])
+            polls_messages_ids_for_dish_adding[chat_id] = poll_message.message_id
+        except IndexError:
+            bot.set_state(chat_id, DishAdderStates.type_naming, chat_id)
+            bot.send_message(chat_id, "Введите тип блюда")
+            bot.stop_poll(chat_id=chat_id, message_id=polls_messages_ids_for_dish_adding[chat_id])
 
     @bot.message_handler(state=DishAdderStates.type_naming)
     def type_naming_handler(message):
         chat_id = message.chat.id
         users_dishes[chat_id].append(message.text.lower())
+        print(message.text)
         bot.set_state(message.from_user.id, DishAdderStates.preferences_selecting, chat_id)
-        pass
+        poll_message = bot.send_poll(chat_id=chat_id, question="Выберете времена года, в которые можно есть ваше блюдо",
+                                     options=preferences_names, is_anonymous=False,
+                                     allows_multiple_answers=True)
+        polls_messages_ids_for_dish_adding[chat_id] = poll_message.message_id
 
+    @bot.poll_answer_handler(state=DishAdderStates.preferences_selecting)
+    def preferences_selecting(poll):
+        chat_id = poll.user.id
+        selected_options_ids = poll.option_ids
+        selected_preferences = []
+        for selected_option_id in selected_options_ids:
+            selected_preferences.append(preferences_names[selected_option_id])
+        users_dishes[chat_id].append(selected_preferences)
+        bot.set_state(chat_id, DishAdderStates.device_selecting, chat_id)
+        poll_message = bot.send_poll(chat_id=chat_id, question="Выберите девайс, необходимый для приготовления блюда",
+                                     options=all_food_devices + ["другое"], is_anonymous=False,
+                                     allows_multiple_answers=False)
+        polls_messages_ids_for_dish_adding[chat_id] = poll_message.message_id
 
+    @bot.poll_answer_handler(state=DishAdderStates.device_selecting)
+    def device_selecting_handler(poll):
+        chat_id = poll.user.id
+        selected_option_id = poll.option_ids[0]
+        print(selected_option_id)
+        try:
+            selected_devices = all_food_devices[selected_option_id]
+            users_dishes[chat_id].append(selected_devices)
+            bot.set_state(chat_id, DishAdderStates.ingredients_selecting, chat_id)
+            poll_message = bot.send_poll(chat_id=chat_id, question="Выберете ингредиенты, из которых готовится ваше блюдо",
+                                         options=ingredients_names, is_anonymous=False, allows_multiple_answers=True)
+            bot.stop_poll(chat_id=chat_id, message_id=polls_messages_ids_for_dish_adding[chat_id])
+            polls_messages_ids_for_dish_adding[chat_id] = poll_message.message_id
+        except IndexError:
+            bot.set_state(chat_id, DishAdderStates.device_naming, chat_id)
+            bot.send_message(chat_id, "Введите девайс")
+            bot.stop_poll(chat_id=chat_id, message_id=polls_messages_ids_for_dish_adding[chat_id])
+
+    @bot.message_handler(state=DishAdderStates.type_naming)
+    def device_naming_handler(message):
+        chat_id = message.chat.id
+        users_dishes[chat_id].append(message.text.lower())
+        print(message.text)
+        bot.set_state(message.from_user.id, DishAdderStates.ingredients_selecting, chat_id)
+        poll_message = bot.send_poll(chat_id=chat_id, question="Выберете ингредиенты, из которых готовится ваше блюдо",
+                                     options=ingredients_names, is_anonymous=False,
+                                     allows_multiple_answers=True)
+        polls_messages_ids_for_dish_adding[chat_id] = poll_message.message_id
+
+    @bot.poll_answer_handler(state=DishAdderStates.ingredients_selecting)
+    def ingredients_selecting(poll):
+        chat_id = poll.user.id
+        selected_options_ids = poll.option_ids
+        selected_ingredients = []
+        for selected_option_id in selected_options_ids:
+            selected_ingredients.append(ingredients_names[selected_option_id])
+        users_dishes[chat_id].append(selected_ingredients)
+        bot.set_state(chat_id, DishAdderStates.quntity_adding, chat_id)
+        bot.send_message(chat_id, f"Введите количества, в которых эти ингредиенты нужны для приготовления вашего блюда (по одному числу на строку)\n"
+                                  f"Список ингредиентов\n-{"\n-".join(selected_ingredients)}")
+
+    @bot.message_handler(state=DishAdderStates.quantity_adding)
+    def quntity_adding(message):
+        chat_id = message.chat.id
+        dict_ingredients = {}
+        quantities = message.text.split("\n")
+        if len(quantities) == len(users_dishes[chat_id][-1]):
+            try:
+                quantities = list(map(int, quantities))
+                for ingredient_ind in range(0, len(users_dishes[chat_id][-1])):
+                    dict_ingredients[users_dishes[chat_id][-1][ingredient_ind]] = quantities[ingredient_ind]
+                users_dishes[chat_id].pop(-1)
+                users_dishes[chat_id].append(dict_ingredients)
+                bot.set_state(chat_id, DishAdderStates.cooking_time_adding, chat_id)
+                bot.send_message(chat_id, "Введите время, которое занимает приготовление вашего блюда")
+            except ValueError:
+                bot.send_message(chat_id, "Попробуйте ещё раз")
+        else:
+            bot.send_message(chat_id, "Попробуйте ещё раз")
+
+    @bot.message_handler(state=DishAdderStates.cooking_time_adding)
+    def cooking_time_adding(message):
+        chat_id = message.chat.id
+        try:
+            users_dishes[chat_id].append(int(message.text))
+            bot.set_state(chat_id, DishAdderStates.eating_time_adding, chat_id)
+            bot.send_message(chat_id, "Введите время, за которое можно съесть ваше блюдо")
+        except ValueError:
+            bot.send_message(chat_id, "Попробуйте ещё раз")
+
+    @bot.message_handler(state=DishAdderStates.eating_time_adding)
+    def eating_time_adding(message):
+        chat_id = message.chat.id
+        try:
+            users_dishes[chat_id].append(int(message.text))
+            bot.set_state(chat_id, DishAdderStates.starting, chat_id)
+            AddDish.add_d(*users_dishes[chat_id][-1])
+        except ValueError:
+            bot.send_message(chat_id, "Попробуйте ещё раз")
 
 
 
