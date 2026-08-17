@@ -10,9 +10,10 @@ class DishAdderStates(StatesGroup):
     preferences_selecting = State()
     device_selecting = State()
     device_naming = State()
-    ingredients_selecting = State()
-    new_ingredients_selecting = State() #
-    ingredients_naming = State() #
-    quantity_adding = State()
+    ingredients_adding = State()
+    # ingredients_selecting = State()
+    # new_ingredients_selecting = State() #
+    # ingredients_naming = State() #
+    # quantity_adding = State()
     cooking_time_adding = State()
     eating_time_adding = State()

@@ -1,3 +1,5 @@
+from statistics import quantiles
+
 from my_food_json_files import Dish, FoodType, Preference, Device, Ingredient, AddDish, DishLoader
 from states_for_telegram import DishAdderStates
 
@@ -7,6 +9,7 @@ from telebot_calendar import Calendar, CallbackData, RUSSIAN_LANGUAGE
 from telebot.handler_backends import State, StatesGroup
 from telebot.storage import StateMemoryStorage
 import datetime
+import re
 
 from randomizer import WeekGenerator
 
@@ -19,7 +22,7 @@ def main():
     dishes = DishLoader().load_dish()
     dishes_names = [dish.name for dish in dishes]
     dish_loader = DishLoader()
-    dish_adder = AddDish(dish_loader.load_dish(), dish_loader.load_ingredients(), dish_loader.load_preferences(), dish_loader.load_food_types(), dish_loader.load_food_devices())
+    dish_adder = AddDish(dish_loader.load_dish(), dish_loader.load_ingredients(), dish_loader.load_preferences(), dish_loader.load_food_types(), dish_loader.load_food_devices(), dish_loader.units())
     week_gen = WeekGenerator(dishes)
 
     food_types = DishLoader().load_food_types()
@@ -28,6 +31,10 @@ def main():
     preferences_names = [preference.name for preference in preferences]
     ingredients = DishLoader().load_ingredients()
     ingredients_names = [ingredient.name for ingredient in ingredients]
+    units = DishLoader().load_units()
+    all_units = []
+    for unit in units:
+        all_units += unit.alternatives
     users_current_indexes = {}
     users_poll_options = {}
 
@@ -42,6 +49,8 @@ def main():
     button_red_devices = telebot.types.InlineKeyboardButton(text="Изменить список девайсов",
                                                             callback_data="red_devices")
     button_add_dish = telebot.types.InlineKeyboardButton(text="Добавить новое блюдо", callback_data="add_dish")
+    button_yes = telebot.types.InlineKeyboardButton(text="Да", callback_data="yes")
+    button_no = telebot.types.InlineKeyboardButton(text="Нет", callback_data="no")
     devices = DishLoader().load_food_devices()
     for device in devices:
         all_food_devices.append(device.name)
@@ -350,78 +359,107 @@ def main():
         chat_id = message.chat.id
         users_dishes[chat_id].append(message.text.lower())
         print(message.text)
-        bot.set_state(message.from_user.id, DishAdderStates.ingredients_selecting, chat_id)
-        ingredients_names_length = len(ingredients_names)
-        if ingredients_names_length > 11:
-            number = ingredients_names_length - 11
-            users_current_indexes[chat_id] = (number, 1)
-            poll_message = bot.send_poll(chat_id=chat_id,
-                                         question="Выберете ингредиенты, из которых готовится ваше блюдо",
-                                         options=ingredients_names[:11] + ["пропуск"], is_anonymous=False,
-                                         allows_multiple_answers=True)
-            users_poll_options[chat_id] = ingredients_names[:11] + ["пропуск"]
-        else:
-            users_current_indexes[chat_id] = (0, 0)
-            poll_message = bot.send_poll(chat_id=chat_id,
-                                         question="Выберете ингредиенты, из которых готовится ваше блюдо",
-                                         options=ingredients_names + ["пропуск"], is_anonymous=False,
-                                         allows_multiple_answers=True)
-            users_poll_options[chat_id] = ingredients_names
-        users_dishes[chat_id].append([])
-        polls_messages_ids_for_dish_adding[chat_id] = poll_message.message_id
+        bot.set_state(message.from_user.id, DishAdderStates.ingredients_adding, chat_id)
+        users_dishes[chat_id].append({})
+        bot.send_message(chat_id, "Введите ингредиент в формате\n<название количество единица_измерения>")
+        # ingredients_names_length = len(ingredients_names)
+        # if ingredients_names_length > 11:
+        #     number = ingredients_names_length - 11
+        #     users_current_indexes[chat_id] = (number, 1)
+        #     poll_message = bot.send_poll(chat_id=chat_id,
+        #                                  question="Выберете ингредиенты, из которых готовится ваше блюдо",
+        #                                  options=ingredients_names[:11] + ["пропуск"], is_anonymous=False,
+        #                                  allows_multiple_answers=True)
+        #     users_poll_options[chat_id] = ingredients_names[:11] + ["пропуск"]
+        # else:
+        #     users_current_indexes[chat_id] = (0, 0)
+        #     poll_message = bot.send_poll(chat_id=chat_id,
+        #                                  question="Выберете ингредиенты, из которых готовится ваше блюдо",
+        #                                  options=ingredients_names + ["пропуск"], is_anonymous=False,
+        #                                  allows_multiple_answers=True)
+        #     users_poll_options[chat_id] = ingredients_names
+        # users_dishes[chat_id].append([])
+        # polls_messages_ids_for_dish_adding[chat_id] = poll_message.message_id
 
-    @bot.poll_answer_handler(state=DishAdderStates.ingredients_selecting)
-    def ingredients_selecting(poll):
-        chat_id = poll.user.id
-        selected_options_ids = poll.option_ids
-        selected_ingredients = []
-        for selected_option_id in selected_options_ids:
-            if users_poll_options[chat_id][selected_option_id] != "пропуск":
-                selected_ingredients.append(users_poll_options[chat_id][selected_option_id])
-        users_dishes[chat_id][-1] += selected_ingredients
-        ingredients_names_length = users_current_indexes[chat_id][0]
-        if ingredients_names_length > 11:
-            number = ingredients_names_length - 11
-            count_11 = users_current_indexes[chat_id][1]
-            poll_message = bot.send_poll(chat_id=chat_id,
-                                         question="Выберете ингредиенты, из которых готовится ваше блюдо",
-                                         options=ingredients_names[11 * count_11: 11 * (count_11 + 1)] + ["пропуск"], is_anonymous=False,
-                                         allows_multiple_answers=True)
-            polls_messages_ids_for_dish_adding[chat_id] = poll_message.message_id
-            users_current_indexes[chat_id] = (number, count_11 + 1)
-            users_poll_options[chat_id] = ingredients_names[11 * count_11: 11 * (count_11 + 1)] + ["пропуск"]
-        elif ingredients_names_length > 0:
-            count_11 = users_current_indexes[chat_id][1]
-            poll_message = bot.send_poll(chat_id=chat_id,
-                                         question="Выберете ингредиенты, из которых готовится ваше блюдо",
-                                         options=ingredients_names[11 * count_11: len(ingredients_names)] + ["пропуск"], is_anonymous=False,
-                                         allows_multiple_answers=True)
-            polls_messages_ids_for_dish_adding[chat_id] = poll_message.message_id
-            users_poll_options[chat_id] = ingredients_names[11 * count_11: len(ingredients_names)] + ["пропуск"]
-            users_current_indexes[chat_id] = (0, 0)
-        else:
-            bot.set_state(chat_id, DishAdderStates.quantity_adding, chat_id)
-            bot.send_message(chat_id, f"Введите количества, в которых эти ингредиенты нужны для приготовления вашего блюда (по одному числу на строку)\n"
-                             f"Список ингредиентов\n-{"\n-".join(users_dishes[chat_id][-1])}")
-
-    @bot.message_handler(state=DishAdderStates.quantity_adding)
-    def quntity_adding(message):
+    @bot.message_handler(state=DishAdderStates.ingredients_selecting)
+    def ingredients_adding_handler(message):
         chat_id = message.chat.id
-        dict_ingredients = {}
-        quantities = message.text.split("\n")
-        if len(quantities) == len(users_dishes[chat_id][-1]):
-            try:
-                quantities = list(map(int, quantities))
-                for ingredient_ind in range(0, len(users_dishes[chat_id][-1])):
-                    dict_ingredients[users_dishes[chat_id][-1][ingredient_ind]] = quantities[ingredient_ind]
-                users_dishes[chat_id].pop(-1)
-                users_dishes[chat_id].append(dict_ingredients)
-                bot.set_state(chat_id, DishAdderStates.cooking_time_adding, chat_id)
-                bot.send_message(chat_id, "Введите время, которое занимает приготовление вашего блюда")
-            except ValueError:
-                bot.send_message(chat_id, "Попробуйте ещё раз")
-        else:
-            bot.send_message(chat_id, "Попробуйте ещё раз")
+        text = re.sub("\s*", "", message.text)
+        keyboard = telebot.types.InlineKeyboardMarkup(row_width=1)
+        keyboard.add(button_yes, button_no)
+        try:
+            quantity = int(re.search("\d*", text))
+            name_unit = re.findall("\D*", text)
+            name = name_unit[0]
+            unit = name_unit[1]
+            if name in ingredients_names and unit in all_units:
+                for unit_original in units:
+                    if unit in unit_original.alternatives.keys():
+                        unit_object = unit_original
+                users_dishes[chat_id][-1][name] = unit_object.alternatives[unit] * quantity
+                bot.send_message(chat_id, "Это все ингредиенты?",
+                                 reply_markup=keyboard)
+            elif unit not in all_units:
+                bot.send_message(chat_id, "Такой единицы измерения нет")
+            else:
+                bot.send_message(chat_id, "Ингредиента с таким названием нет в базе данных, хотите создать новый?", reply_markup=keyboard)
+        except TypeError:
+            bot.send_message(chat_id, "В сообщении нет чисел")
+
+
+
+    # @bot.poll_answer_handler(state=DishAdderStates.ingredients_selecting)
+    # def ingredients_selecting(poll):
+    #     chat_id = poll.user.id
+    #     selected_options_ids = poll.option_ids
+    #     selected_ingredients = []
+    #     for selected_option_id in selected_options_ids:
+    #         if users_poll_options[chat_id][selected_option_id] != "пропуск":
+    #             selected_ingredients.append(users_poll_options[chat_id][selected_option_id])
+    #     users_dishes[chat_id][-1] += selected_ingredients
+    #     ingredients_names_length = users_current_indexes[chat_id][0]
+    #     if ingredients_names_length > 11:
+    #         number = ingredients_names_length - 11
+    #         count_11 = users_current_indexes[chat_id][1]
+    #         poll_message = bot.send_poll(chat_id=chat_id,
+    #                                      question="Выберете ингредиенты, из которых готовится ваше блюдо",
+    #                                      options=ingredients_names[11 * count_11: 11 * (count_11 + 1)] + ["пропуск"], is_anonymous=False,
+    #                                      allows_multiple_answers=True)
+    #         polls_messages_ids_for_dish_adding[chat_id] = poll_message.message_id
+    #         users_current_indexes[chat_id] = (number, count_11 + 1)
+    #         users_poll_options[chat_id] = ingredients_names[11 * count_11: 11 * (count_11 + 1)] + ["пропуск"]
+    #     elif ingredients_names_length > 0:
+    #         count_11 = users_current_indexes[chat_id][1]
+    #         poll_message = bot.send_poll(chat_id=chat_id,
+    #                                      question="Выберете ингредиенты, из которых готовится ваше блюдо",
+    #                                      options=ingredients_names[11 * count_11: len(ingredients_names)] + ["пропуск"], is_anonymous=False,
+    #                                      allows_multiple_answers=True)
+    #         polls_messages_ids_for_dish_adding[chat_id] = poll_message.message_id
+    #         users_poll_options[chat_id] = ingredients_names[11 * count_11: len(ingredients_names)] + ["пропуск"]
+    #         users_current_indexes[chat_id] = (0, 0)
+    #     else:
+    #         bot.set_state(chat_id, DishAdderStates.quantity_adding, chat_id)
+    #         bot.send_message(chat_id, f"Введите количества, в которых эти ингредиенты нужны для приготовления вашего блюда (по одному числу на строку)\n"
+    #                          f"Список ингредиентов\n-{"\n-".join(users_dishes[chat_id][-1])}")
+    #
+    # @bot.message_handler(state=DishAdderStates.quantity_adding)
+    # def quntity_adding(message):
+    #     chat_id = message.chat.id
+    #     dict_ingredients = {}
+    #     quantities = message.text.split("\n")
+    #     if len(quantities) == len(users_dishes[chat_id][-1]):
+    #         try:
+    #             quantities = list(map(int, quantities))
+    #             for ingredient_ind in range(0, len(users_dishes[chat_id][-1])):
+    #                 dict_ingredients[users_dishes[chat_id][-1][ingredient_ind]] = quantities[ingredient_ind]
+    #             users_dishes[chat_id].pop(-1)
+    #             users_dishes[chat_id].append(dict_ingredients)
+    #             bot.set_state(chat_id, DishAdderStates.cooking_time_adding, chat_id)
+    #             bot.send_message(chat_id, "Введите время, которое занимает приготовление вашего блюда")
+    #         except ValueError:
+    #             bot.send_message(chat_id, "Попробуйте ещё раз")
+    #     else:
+    #         bot.send_message(chat_id, "Попробуйте ещё раз")
 
     @bot.message_handler(state=DishAdderStates.cooking_time_adding)
     def cooking_time_adding(message):

@@ -1,9 +1,14 @@
 from dataclasses import dataclass
 
 @dataclass(frozen=True)
+class Unit:
+    name: str
+    alternatives: dict[str: int|float]
+
+@dataclass(frozen=True)
 class Ingredient:
     name: str
-    unit: str
+    unit: Unit
 
 @dataclass(frozen=True)
 class Device:

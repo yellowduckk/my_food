@@ -6,12 +6,13 @@ from my_food_json_files.dish_classes import *
 
 
 class AddDish:
-    def __init__(self, dishes: List[Dish], ingredients: List[Ingredient], preferences: List[Preference], food_types: List[FoodType], devices: List[Device]):
+    def __init__(self, dishes: List[Dish], ingredients: List[Ingredient], preferences: List[Preference], food_types: List[FoodType], devices: List[Device], units: List[Unit]):
         self.dishes = dishes
         self.ingredients = ingredients
         self.preferences = preferences
         self.food_types = food_types
         self.devices = devices
+        self.units = units
 
     def del_d(self, name: str) -> None:
         """

@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from my_food_json_files.dish_classes import Dish, Ingredient, Preference, FoodType, Device
+from my_food_json_files.dish_classes import Dish, Ingredient, Preference, FoodType, Device, Unit
 
 class DishLoader:
     def __init__(self):
@@ -9,14 +9,40 @@ class DishLoader:
         self.food_types = []
         self.devices = []
         self.ingredients = []
+        self.units = []
+
+    def find_with_name(self, massive: list[FoodType|Device|Preference|Ingredient|Unit], name: str) -> FoodType|Device|Preference|Ingredient|Unit|None:
+        """
+        :param massive: массив, где надо найти объект с соответсвующим наименованием
+        :param name: наименование
+        :return: объект с соответсвтующим наименованием или None
+        """
+        for element in massive:
+            if element.name == name:
+                return element
+        return None
+
+    def load_units(self):
+        """
+        :return: обёрнутые в класс единицы измерения
+        """
+        with open(Path(Path(__file__).parent, "units.json"), "r", encoding="utf-8") as file:
+            units = json.load(file)
+        result_units = [Unit(**unit) for unit in units["food_devices"]]
+        self.units = result_units
+
+        return result_units
 
     def load_ingredients(self) -> list[Ingredient]:
         """
-        :return: обернутые в класс ингредиенты
+        :return: обёрнутые в класс ингредиенты
         """
         with open(Path(Path(__file__).parent, "ingredients.json"), "r", encoding="utf-8") as file:
             ingredients = json.load(file)
-        result_ingredient = [Ingredient(**ingredient) for ingredient in ingredients["ingredients"]]
+        result_ingredient = []
+        for ingredient in ingredients:
+            ingredient["unit"] = self.find_with_name(self.units, ingredient["unit"])
+            result_ingredient.append(Ingredient(**ingredient))
         self.ingredients = result_ingredient
 
         return result_ingredient
@@ -53,19 +79,6 @@ class DishLoader:
         self.devices = result_devices
 
         return result_devices
-
-    def find_with_name(self, massive: list[FoodType|Device|Preference|Ingredient], name: str) -> FoodType|Device|Preference|Ingredient|None:
-        """
-        :param massive: массив, где надо найти объект с соответсвующим наименованием
-        :param name: наименование
-        :return: объект с соответсвтующим наименованием или None
-        """
-        for element in massive:
-            if element.name == name:
-
-                return element
-        return None
-
 
     def load_dish(self) -> list[Dish]:
         """
