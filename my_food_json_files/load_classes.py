@@ -22,13 +22,13 @@ class DishLoader:
                 return element
         return None
 
-    def load_units(self):
+    def load_units(self) -> list[Unit]:
         """
         :return: обёрнутые в класс единицы измерения
         """
         with open(Path(Path(__file__).parent, "units.json"), "r", encoding="utf-8") as file:
             units = json.load(file)
-        result_units = [Unit(**unit) for unit in units["food_devices"]]
+        result_units = [Unit(**unit) for unit in units["units"]]
         self.units = result_units
 
         return result_units
@@ -37,11 +37,13 @@ class DishLoader:
         """
         :return: обёрнутые в класс ингредиенты
         """
+        self.load_units()
         with open(Path(Path(__file__).parent, "ingredients.json"), "r", encoding="utf-8") as file:
             ingredients = json.load(file)
         result_ingredient = []
-        for ingredient in ingredients:
-            ingredient["unit"] = self.find_with_name(self.units, ingredient["unit"])
+        for ingredient in ingredients["ingredients"]:
+            for index in range(0, len(ingredient["unit"])):
+                ingredient["unit"][index] = self.find_with_name(self.units, ingredient["unit"][index])
             result_ingredient.append(Ingredient(**ingredient))
         self.ingredients = result_ingredient
 

@@ -8,7 +8,7 @@ class Unit:
 @dataclass(frozen=True)
 class Ingredient:
     name: str
-    unit: Unit
+    unit: [Unit]
 
 @dataclass(frozen=True)
 class Device:

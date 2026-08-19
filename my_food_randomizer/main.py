@@ -22,7 +22,8 @@ def main():
     dishes = DishLoader().load_dish()
     dishes_names = [dish.name for dish in dishes]
     dish_loader = DishLoader()
-    dish_adder = AddDish(dish_loader.load_dish(), dish_loader.load_ingredients(), dish_loader.load_preferences(), dish_loader.load_food_types(), dish_loader.load_food_devices(), dish_loader.units())
+    dish_adder = AddDish(dish_loader.load_dish(), dish_loader.load_ingredients(), dish_loader.load_preferences(),
+                         dish_loader.load_food_types(), dish_loader.load_food_devices(), dish_loader.load_units())
     week_gen = WeekGenerator(dishes)
 
     food_types = DishLoader().load_food_types()
@@ -30,7 +31,13 @@ def main():
     preferences = DishLoader().load_preferences()
     preferences_names = [preference.name for preference in preferences]
     ingredients = DishLoader().load_ingredients()
-    ingredients_names = [ingredient.name for ingredient in ingredients]
+    ingredients_dict = {}
+    for ingredient in ingredients:
+        ingredients_dict[ingredient.name] = []
+        for unit in ingredient.unit:
+            ingredients_dict[ingredient.name] += unit.alternatives
+    # print(ingredients_dict)
+    # print(ingredients)
     units = DishLoader().load_units()
     all_units = []
     for unit in units:
@@ -209,7 +216,7 @@ def main():
                                              question="Выберите тип блюда",
                                              options=food_types_names[:11] + ["другое"], is_anonymous=False,
                                              allows_multiple_answers=False)
-                users_poll_options[chat_id] = ingredients_names[:11] + ["пропуск"]
+                users_poll_options[chat_id] = food_types_names[:11] + ["пропуск"]
             else:
                 users_current_indexes[chat_id] = (0, 0)
                 poll_message = bot.send_poll(chat_id=chat_id,
@@ -290,7 +297,7 @@ def main():
                                          question="Выберите девайс, необходимый для приготовления блюда",
                                          options=all_food_devices[:11] + ["другое"], is_anonymous=False,
                                          allows_multiple_answers=False)
-            users_poll_options[chat_id] = ingredients_names[:11] + ["пропуск"]
+            users_poll_options[chat_id] = all_food_devices[:11] + ["пропуск"]
         else:
             users_current_indexes[chat_id] = (0, 0)
             poll_message = bot.send_poll(chat_id=chat_id, question="Выберите девайс, необходимый для приготовления блюда",
@@ -308,25 +315,9 @@ def main():
             selected_device = users_poll_options[chat_id][selected_option_id]
             users_dishes[chat_id].append(selected_device)
             bot.set_state(chat_id, DishAdderStates.ingredients_selecting, chat_id)
-            ingredients_names_length = len(ingredients_names)
-            if ingredients_names_length > 11:
-                number = ingredients_names_length - 11
-                users_current_indexes[chat_id] = (number, 1)
-                poll_message = bot.send_poll(chat_id=chat_id,
-                                             question="Выберете ингредиенты, из которых готовится ваше блюдо",
-                                             options=ingredients_names[:11] + ["пропуск"], is_anonymous=False,
-                                             allows_multiple_answers=True)
-                users_poll_options[chat_id] = ingredients_names[:11] + ["пропуск"]
-
-            else:
-                users_current_indexes[chat_id] = (0, 0)
-                poll_message = bot.send_poll(chat_id=chat_id,
-                                             question="Выберете ингредиенты, из которых готовится ваше блюдо",
-                                             options=ingredients_names, is_anonymous=False,
-                                             allows_multiple_answers=True)
-                users_poll_options[chat_id] = ingredients_names
-            users_dishes[chat_id].append([])
-            polls_messages_ids_for_dish_adding[chat_id] = poll_message.message_id
+            users_dishes[chat_id].append({})
+            bot.send_message(chat_id, "Введите ингредиент в формате\n<название количество единица_измерения>")
+            users_dishes[chat_id].append({})
         else:
             devices_names_length = users_current_indexes[chat_id][0]
             if devices_names_length == 0:
@@ -359,7 +350,7 @@ def main():
         chat_id = message.chat.id
         users_dishes[chat_id].append(message.text.lower())
         print(message.text)
-        bot.set_state(message.from_user.id, DishAdderStates.ingredients_adding, chat_id)
+        bot.set_state(message.from_user.id, DishAdderStates.ingredients_selecting, chat_id)
         users_dishes[chat_id].append({})
         bot.send_message(chat_id, "Введите ингредиент в формате\n<название количество единица_измерения>")
         # ingredients_names_length = len(ingredients_names)
@@ -384,27 +375,82 @@ def main():
     @bot.message_handler(state=DishAdderStates.ingredients_selecting)
     def ingredients_adding_handler(message):
         chat_id = message.chat.id
-        text = re.sub("\s*", "", message.text)
+        # text = re.sub("\s*", "", message.text)
+        text = message.text.lower()
         keyboard = telebot.types.InlineKeyboardMarkup(row_width=1)
         keyboard.add(button_yes, button_no)
-        try:
-            quantity = int(re.search("\d*", text))
-            name_unit = re.findall("\D*", text)
-            name = name_unit[0]
-            unit = name_unit[1]
-            if name in ingredients_names and unit in all_units:
+        quantity = re.search("\d+", text)
+        name_unit = [n_u for n_u in re.findall("\D+", text) if re.match("\s+", n_u) is None]
+        print(name_unit)
+        if len(name_unit) == 2 and quantity is not None:
+            quantity = int(quantity.group(0))
+            name = name_unit[0].strip()
+            unit = name_unit[1].strip()
+            if name in ingredients_dict.keys() and unit in all_units:
+                if unit in ingredients_dict[name]:
+                    for unit_original in units:
+                        if unit in unit_original.alternatives.keys():
+                            unit_object = unit_original
+                    users_dishes[chat_id][-1][name] = unit_object.alternatives[unit] * quantity
+                    bot.send_message(chat_id,
+                                     f"Вы ввели {name} {quantity} {unit}. Это то, что вы хотели ввести?",
+                                     reply_markup=keyboard)
+                    bot.set_state(chat_id, DishAdderStates.ingredients_questening, chat_id)
+                else:
+                    print(unit, ingredients_dict[name])
+                    bot.send_message(chat_id, "Такая единица измерения не подходит данному ингредиенту")
+            elif unit not in all_units:
+                bot.send_message(chat_id, "Такой единицы измерения нет")
+            else:
                 for unit_original in units:
                     if unit in unit_original.alternatives.keys():
                         unit_object = unit_original
                 users_dishes[chat_id][-1][name] = unit_object.alternatives[unit] * quantity
-                bot.send_message(chat_id, "Это все ингредиенты?",
+                bot.send_message(chat_id,
+                                 f"Вы ввели {name} {quantity} {unit}. Ингредиента с таким названием нет в базе данных, хотите создать новый?",
                                  reply_markup=keyboard)
-            elif unit not in all_units:
-                bot.send_message(chat_id, "Такой единицы измерения нет")
-            else:
-                bot.send_message(chat_id, "Ингредиента с таким названием нет в базе данных, хотите создать новый?", reply_markup=keyboard)
-        except TypeError:
-            bot.send_message(chat_id, "В сообщении нет чисел")
+                bot.set_state(chat_id, DishAdderStates.ingredients_questening, chat_id)
+        else:
+            if quantity is None:
+                bot.send_message(chat_id, "В сообщении нет чисел")
+            if len(name_unit) < 2:
+                bot.send_message(chat_id, "Недостаточно данных, формат не соблюдён")
+
+
+        # except TypeError:
+        #     bot.send_message(chat_id, "В сообщении нет чисел")
+
+    @bot.callback_query_handler(func=lambda call: call.data == "yes", state=DishAdderStates.ingredients_questening)
+    def callback_inline(call):
+        chat_id = call.from_user.id
+        keyboard = telebot.types.InlineKeyboardMarkup(row_width=1)
+        keyboard.add(button_yes, button_no)
+        bot.send_message(chat_id, "Ингредиент добавлен")
+        bot.send_message(chat_id, "Это все ингредиенты?", reply_markup=keyboard)
+        bot.set_state(chat_id, DishAdderStates.ingredients_questening_exit, chat_id)
+
+    @bot.callback_query_handler(func=lambda call: call.data == "no", state=DishAdderStates.ingredients_questening)
+    def callback_inline(call):
+        chat_id = call.from_user.id
+        keyboard = telebot.types.InlineKeyboardMarkup(row_width=1)
+        keyboard.add(button_yes, button_no)
+        bot.set_state(chat_id, DishAdderStates.ingredients_selecting, chat_id)
+        users_dishes[chat_id][-1].popitem()
+        bot.send_message(chat_id, "Ингредиент не добавлен")
+        bot.send_message(chat_id, "Это все ингредиенты?", reply_markup=keyboard)
+        bot.set_state(chat_id, DishAdderStates.ingredients_questening_exit, chat_id)
+
+    @bot.callback_query_handler(func=lambda call: call.data == "no", state=DishAdderStates.ingredients_questening_exit)
+    def callback_inline(call):
+        chat_id = call.from_user.id
+        bot.set_state(chat_id, DishAdderStates.ingredients_selecting, chat_id)
+        bot.send_message(chat_id, "Введите ингредиент в формате\n<название количество единица_измерения>")
+
+    @bot.callback_query_handler(func=lambda call: call.data == "yes", state=DishAdderStates.ingredients_questening_exit)
+    def callback_inline(call):
+        chat_id = call.from_user.id
+        bot.set_state(chat_id, DishAdderStates.cooking_time_adding, chat_id)
+        bot.send_message(chat_id, "Введите время, которое занимает приготовление вашего блюда")
 
 
 
@@ -481,7 +527,6 @@ def main():
             dish_adder.add_d(*users_dishes[chat_id])
         except ValueError:
             bot.send_message(chat_id, "Попробуйте ещё раз")
-
 
 
     bot.infinity_polling()
