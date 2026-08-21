@@ -11,8 +11,8 @@ class DishAdderStates(StatesGroup):
     device_selecting = State()
     device_naming = State()
     ingredients_selecting = State()
-    ingredients_questening = State()
-    ingredients_questening_exit = State()
+    # ingredients_questening = State()
+    # ingredients_questening_exit = State()
     # ingredients_selecting = State()
     # new_ingredients_selecting = State() #
     # ingredients_naming = State() #

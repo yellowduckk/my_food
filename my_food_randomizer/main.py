@@ -376,81 +376,158 @@ def main():
     def ingredients_adding_handler(message):
         chat_id = message.chat.id
         # text = re.sub("\s*", "", message.text)
-        text = message.text.lower()
-        keyboard = telebot.types.InlineKeyboardMarkup(row_width=1)
-        keyboard.add(button_yes, button_no)
-        quantity = re.search("\d+", text)
-        name_unit = [n_u for n_u in re.findall("\D+", text) if re.match("\s+", n_u) is None]
-        print(name_unit)
-        if len(name_unit) == 2 and quantity is not None:
-            quantity = int(quantity.group(0))
-            name = name_unit[0].strip()
-            unit = name_unit[1].strip()
-            if name in ingredients_dict.keys() and unit in all_units:
-                if unit in ingredients_dict[name]:
+        text = [string.strip() for string in message.text.lower().split(",\n")]
+        flag_all = False
+        print(text)
+        for string in text:
+            flag_q = False
+            flag_u = False
+            unit = ""
+            name = ""
+            quantity = 0
+            string = re.sub("\s+", " ", re.sub("[^A-Za-zа-яА-Я0-9\s]+", "", string)).split(" ")
+            pop_indexes = []
+            print(string)
+            for index in range(0, len(string)):
+                word = string[index]
+                print(word)
+                if word in all_units:
+                    # if word in all_units and unit == "":
+                    unit = word
+                if re.match("\d+", word) is not None:
+                    quantity = int(word)
+
+            if quantity == 0:
+                bot.send_message(chat_id, f"В строке\n{" ".join(string)}\nнет количества")
+            else: flag_q = True
+            if unit == "":
+                bot.send_message(chat_id, f"В строке\n{" ".join(string)}\nнет единицы измерения")
+            else: flag_u = True
+            if flag_q is True and flag_u is True:
+                string.pop(string.index(unit))
+                string.pop(string.index(str(quantity)))
+                name = " ".join(string)
+                if name not in users_dishes[chat_id][-1].keys():
+                    true_unit = unit
                     for unit_original in units:
                         if unit in unit_original.alternatives.keys():
-                            unit_object = unit_original
-                    users_dishes[chat_id][-1][name] = unit_object.alternatives[unit] * quantity
-                    bot.send_message(chat_id,
-                                     f"Вы ввели {name} {quantity} {unit}. Это то, что вы хотели ввести?",
-                                     reply_markup=keyboard)
-                    bot.set_state(chat_id, DishAdderStates.ingredients_questening, chat_id)
+                            true_unit = unit_original
+                    if name in ingredients_dict.keys():
+                        if true_unit.name in ingredients_dict[name]:
+                            quantity = true_unit.alternatives[unit] * quantity
+                            users_dishes[chat_id][-1][name] = (quantity, true_unit.name)
+                            flag_all = True
+                        else:
+                            flag_all = False
+                            bot.send_message(chat_id, f"В строке\n{string}\nединица измерения не соответствует названию")
+                            users_dishes[chat_id][-1] = {}
+                            break
+                    else:
+                        quantity = true_unit.alternatives[unit] * quantity
+                        users_dishes[chat_id][-1][name] = (quantity, true_unit.name)
+                        flag_all = True
+                        # bot.send_message(chat_id, "")
                 else:
-                    print(unit, ingredients_dict[name])
-                    bot.send_message(chat_id, "Такая единица измерения не подходит данному ингредиенту")
-            elif unit not in all_units:
-                bot.send_message(chat_id, "Такой единицы измерения нет")
+                    flag_all = False
+                    bot.send_message(chat_id, f"{name[0].upper() + name[1:]} появляется в списке больше одного раза")
+                    break
             else:
-                for unit_original in units:
-                    if unit in unit_original.alternatives.keys():
-                        unit_object = unit_original
-                users_dishes[chat_id][-1][name] = unit_object.alternatives[unit] * quantity
-                bot.send_message(chat_id,
-                                 f"Вы ввели {name} {quantity} {unit}. Ингредиента с таким названием нет в базе данных, хотите создать новый?",
-                                 reply_markup=keyboard)
-                bot.set_state(chat_id, DishAdderStates.ingredients_questening, chat_id)
+                flag_all = False
+                users_dishes[chat_id][-1] = {}
+                break
+        if flag_all:
+            bot.set_state(chat_id, DishAdderStates.cooking_time_adding, chat_id)
+            all_ingredients_strings = []
+            print(users_dishes[chat_id][-1])
+            for ingredient in users_dishes[chat_id][-1].keys():
+                all_ingredients_strings.append(ingredient + " " + str(users_dishes[chat_id][-1][ingredient][0]) + " " + users_dishes[chat_id][-1][ingredient][1])
+            all_ingredients_strings = "\n-".join(all_ingredients_strings)
+            bot.send_message(chat_id, f"Были добавлены следующие ингредиенты:\n-{all_ingredients_strings}")
         else:
-            if quantity is None:
-                bot.send_message(chat_id, "В сообщении нет чисел")
-            if len(name_unit) < 2:
-                bot.send_message(chat_id, "Недостаточно данных, формат не соблюдён")
+            users_dishes[chat_id][-1] = {}
+            bot.send_message(chat_id, f"Начните заново")
+
+
+
+    # @bot.message_handler(state=DishAdderStates.ingredients_selecting)
+    # def ingredients_adding_handler(message):
+    #     chat_id = message.chat.id
+    #     # text = re.sub("\s*", "", message.text)
+    #     text = message.text.lower()
+    #     keyboard = telebot.types.InlineKeyboardMarkup(row_width=1)
+    #     keyboard.add(button_yes, button_no)
+    #     quantity = re.search("\d+", text)
+    #     name_unit = [n_u for n_u in re.findall("\D+", text) if re.match("\s+", n_u) is None]
+    #     print(name_unit)
+    #     if len(name_unit) == 2 and quantity is not None:
+    #         quantity = int(quantity.group(0))
+    #         name = name_unit[0].strip()
+    #         unit = name_unit[1].strip()
+    #         if name in ingredients_dict.keys() and unit in all_units:
+    #             if unit in ingredients_dict[name]:
+    #                 for unit_original in units:
+    #                     if unit in unit_original.alternatives.keys():
+    #                         unit_object = unit_original
+    #                 users_dishes[chat_id][-1][name] = unit_object.alternatives[unit] * quantity
+    #                 bot.send_message(chat_id,
+    #                                  f"Вы ввели {name} {quantity} {unit}. Это то, что вы хотели ввести?",
+    #                                  reply_markup=keyboard)
+    #                 bot.set_state(chat_id, DishAdderStates.ingredients_questening, chat_id)
+    #             else:
+    #                 print(unit, ingredients_dict[name])
+    #                 bot.send_message(chat_id, "Такая единица измерения не подходит данному ингредиенту")
+    #         elif unit not in all_units:
+    #             bot.send_message(chat_id, "Такой единицы измерения нет")
+    #         else:
+    #             for unit_original in units:
+    #                 if unit in unit_original.alternatives.keys():
+    #                     unit_object = unit_original
+    #             users_dishes[chat_id][-1][name] = unit_object.alternatives[unit] * quantity
+    #             bot.send_message(chat_id,
+    #                              f"Вы ввели {name} {quantity} {unit}. Ингредиента с таким названием нет в базе данных, хотите создать новый?",
+    #                              reply_markup=keyboard)
+    #             bot.set_state(chat_id, DishAdderStates.ingredients_questening, chat_id)
+    #     else:
+    #         if quantity is None:
+    #             bot.send_message(chat_id, "В сообщении нет чисел")
+    #         if len(name_unit) < 2:
+    #             bot.send_message(chat_id, "Недостаточно данных, формат не соблюдён")
 
 
         # except TypeError:
         #     bot.send_message(chat_id, "В сообщении нет чисел")
 
-    @bot.callback_query_handler(func=lambda call: call.data == "yes", state=DishAdderStates.ingredients_questening)
-    def callback_inline(call):
-        chat_id = call.from_user.id
-        keyboard = telebot.types.InlineKeyboardMarkup(row_width=1)
-        keyboard.add(button_yes, button_no)
-        bot.send_message(chat_id, "Ингредиент добавлен")
-        bot.send_message(chat_id, "Это все ингредиенты?", reply_markup=keyboard)
-        bot.set_state(chat_id, DishAdderStates.ingredients_questening_exit, chat_id)
-
-    @bot.callback_query_handler(func=lambda call: call.data == "no", state=DishAdderStates.ingredients_questening)
-    def callback_inline(call):
-        chat_id = call.from_user.id
-        keyboard = telebot.types.InlineKeyboardMarkup(row_width=1)
-        keyboard.add(button_yes, button_no)
-        bot.set_state(chat_id, DishAdderStates.ingredients_selecting, chat_id)
-        users_dishes[chat_id][-1].popitem()
-        bot.send_message(chat_id, "Ингредиент не добавлен")
-        bot.send_message(chat_id, "Это все ингредиенты?", reply_markup=keyboard)
-        bot.set_state(chat_id, DishAdderStates.ingredients_questening_exit, chat_id)
-
-    @bot.callback_query_handler(func=lambda call: call.data == "no", state=DishAdderStates.ingredients_questening_exit)
-    def callback_inline(call):
-        chat_id = call.from_user.id
-        bot.set_state(chat_id, DishAdderStates.ingredients_selecting, chat_id)
-        bot.send_message(chat_id, "Введите ингредиент в формате\n<название количество единица_измерения>")
-
-    @bot.callback_query_handler(func=lambda call: call.data == "yes", state=DishAdderStates.ingredients_questening_exit)
-    def callback_inline(call):
-        chat_id = call.from_user.id
-        bot.set_state(chat_id, DishAdderStates.cooking_time_adding, chat_id)
-        bot.send_message(chat_id, "Введите время, которое занимает приготовление вашего блюда")
+    # @bot.callback_query_handler(func=lambda call: call.data == "yes", state=DishAdderStates.ingredients_questening)
+    # def callback_inline(call):
+    #     chat_id = call.from_user.id
+    #     keyboard = telebot.types.InlineKeyboardMarkup(row_width=1)
+    #     keyboard.add(button_yes, button_no)
+    #     bot.send_message(chat_id, "Ингредиент добавлен")
+    #     bot.send_message(chat_id, "Это все ингредиенты?", reply_markup=keyboard)
+    #     bot.set_state(chat_id, DishAdderStates.ingredients_questening_exit, chat_id)
+    #
+    # @bot.callback_query_handler(func=lambda call: call.data == "no", state=DishAdderStates.ingredients_questening)
+    # def callback_inline(call):
+    #     chat_id = call.from_user.id
+    #     keyboard = telebot.types.InlineKeyboardMarkup(row_width=1)
+    #     keyboard.add(button_yes, button_no)
+    #     bot.set_state(chat_id, DishAdderStates.ingredients_selecting, chat_id)
+    #     users_dishes[chat_id][-1].popitem()
+    #     bot.send_message(chat_id, "Ингредиент не добавлен")
+    #     bot.send_message(chat_id, "Это все ингредиенты?", reply_markup=keyboard)
+    #     bot.set_state(chat_id, DishAdderStates.ingredients_questening_exit, chat_id)
+    #
+    # @bot.callback_query_handler(func=lambda call: call.data == "no", state=DishAdderStates.ingredients_questening_exit)
+    # def callback_inline(call):
+    #     chat_id = call.from_user.id
+    #     bot.set_state(chat_id, DishAdderStates.ingredients_selecting, chat_id)
+    #     bot.send_message(chat_id, "Введите ингредиент в формате\n<название количество единица_измерения>")
+    #
+    # @bot.callback_query_handler(func=lambda call: call.data == "yes", state=DishAdderStates.ingredients_questening_exit)
+    # def callback_inline(call):
+    #     chat_id = call.from_user.id
+    #     bot.set_state(chat_id, DishAdderStates.cooking_time_adding, chat_id)
+    #     bot.send_message(chat_id, "Введите время, которое занимает приготовление вашего блюда")
 
 
 
