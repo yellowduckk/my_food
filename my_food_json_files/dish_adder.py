@@ -53,54 +53,36 @@ class AddDish:
         devices_names = [device.name for device in self.devices]
         dish_dict = {}
         dish_dict["id"] = len(dishes_names) + 1
-        name = name.lower()
-        food_type = food_type.lower()
-        new_preferences = list(map(lambda pref: pref.lower(), new_preferences))
-        food_device = food_device.lower()
-        busted_ings = []
-        for ing in new_ingredients.keys():
-            if ing != ing.lower():
-                busted_ings.append(ing)
-        for ing in busted_ings:
-            new_ingredients[ing.lower()] = new_ingredients[ing]
-            new_ingredients.pop(ing)
-        if name.lower() in dishes_names:
-            print("Такое блюдо уже есть")
-            return None
-        else:
-            dish_dict["name"] = name
-            if food_type.lower() not in food_types_names:
-                print("Такого типа блюд нет")
-                return None
-            dish_dict["food_type"] = food_type
-            dish_dict["preferences"] = []
-            for preference in new_preferences:
-                if preference.lower() in preferences_names:
-                    dish_dict["preferences"].append(preference)
-                else:
-                    print("Такого времени года нет")
-                    return None
-            if food_device.lower() not in devices_names:
-                print("Такого девайса нет")
-                return None
-            dish_dict["food_device"] = food_device
-            dish_dict["ingredients"] = {}
-            for ingredient in new_ingredients.keys():
-                if ingredient in ingredients_names:
-                    dish_dict["ingredients"][ingredient] = new_ingredients[ingredient]
-                else:
-                    print("Такого ингредиента нет")
-                    return None
-            if  isinstance(eating_time, int) and cooking_time > 0 and cooking_time < 6:
-                dish_dict["cooking_time"] = cooking_time
-            else:
-                print("Блюда столько не готовятся")
-                return None
-            if isinstance(eating_time, int) and eating_time > 0 and eating_time < 6:
-                dish_dict["eating_time"] = eating_time
-            else:
-                print("Блюда столько не едятся")
-                return None
+        dish_dict["name"] = name
+        dish_dict["food_type"] = food_type
+        if food_type not in food_types_names:
+            with open(Path(Path(__file__).parent, "food_types.json"), "r", encoding="utf-8") as file:
+                food_types_json = json.load(file)
+            with open(Path(Path(__file__).parent, "food_types.json"), "w", encoding="utf-8") as file:
+                food_types_json["food_types"].append(food_type)
+                json.dump(food_types_json, file, ensure_ascii=False, indent=4)
+        dish_dict["preferences"] = []
+        for preference in new_preferences:
+            dish_dict["preferences"].append(preference)
+        dish_dict["food_device"] = food_device
+        if food_device not in devices_names:
+            with open(Path(Path(__file__).parent, "food_devices.json"), "r", encoding="utf-8") as file:
+                food_devices_json = json.load(file)
+            with open(Path(Path(__file__).parent, "food_devices.json"), "w", encoding="utf-8") as file:
+                food_devices_json["food_devices"].append(food_device)
+                json.dump(food_devices_json, file, ensure_ascii=False, indent=4)
+        dish_dict["ingredients"] = {}
+        with open(Path(Path(__file__).parent, "ingredients.json"), "r", encoding="utf-8") as file:
+            ingredients_json = json.load(file)
+        for ingredient in new_ingredients.keys():
+            dish_dict["ingredients"][ingredient] = new_ingredients[ingredient]
+            if ingredient not in ingredients_names:
+                ingredients_json["ingredients"].append({"name": ingredient,
+                                                        "unit": [new_ingredients[ingredient][1]]})
+        with open(Path(Path(__file__).parent, "ingredients.json"), "w", encoding="utf-8") as file:
+            json.dump(ingredients_json, file, ensure_ascii=False, indent=4)
+        dish_dict["cooking_time"] = cooking_time
+        dish_dict["eating_time"] = eating_time
         with open(Path(Path(__file__).parent, "dishes.json"), "r", encoding="utf-8") as file:
             dishes_json = json.load(file)
         with open(Path(Path(__file__).parent, "dishes.json"), "w", encoding="utf-8") as file:

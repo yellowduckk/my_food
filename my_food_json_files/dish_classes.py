@@ -29,6 +29,6 @@ class Dish:
     food_type: FoodType
     preferences: list[Preference]
     food_device: Device
-    ingredients: dict[Ingredient: int]
+    ingredients: dict[Ingredient: (int, Unit)]
     cooking_time: int
     eating_time: int

@@ -474,12 +474,13 @@ def main():
                                f"Ингредиенты:\n-{all_ingredients_strings}\nВремя приготовления: {users_dishes[chat_id][-2]}\nВремя съедания блюда: {users_dishes[chat_id][-1]}")
                 bot.send_message(chat_id, dish_string)
                 bot.send_message(chat_id, "Вы точно хотите добавить это блюдо?", reply_markup=keyboard)
+                bot.set_state(chat_id, DishAdderStates.quitting, chat_id)
             else:
                 bot.send_message(chat_id, "Еду столько не едят")
         except ValueError:
             bot.send_message(chat_id, "Попробуйте ещё раз")
 
-    @bot.callback_query_handler(func=lambda call: call.data == "yes", state=DishAdderStates.ingredients_questening)
+    @bot.callback_query_handler(func=lambda call: call.data == "yes", state=DishAdderStates.quitting)
     def callback_inline(call):
         chat_id = call.message.chat.id
         keyboard = telebot.types.InlineKeyboardMarkup(row_width=1)
@@ -488,14 +489,16 @@ def main():
         dish_adder.add_d(*users_dishes[chat_id])
         bot.send_message(chat_id, "Хотите создать новое расписание или отредактировать список использованых девайсов?",
                          reply_markup=keyboard)
+        bot.set_state(chat_id, DishAdderStates.starting, chat_id)
 
-    @bot.callback_query_handler(func=lambda call: call.data == "no", state=DishAdderStates.ingredients_questening)
+    @bot.callback_query_handler(func=lambda call: call.data == "no", state=DishAdderStates.quitting)
     def callback_inline(call):
         chat_id = call.message.chat.id
         keyboard = telebot.types.InlineKeyboardMarkup(row_width=1)
         keyboard.add(button_shedule, button_red_devices, button_add_dish)
         bot.send_message(chat_id, "Хотите создать новое расписание или отредактировать список использованых девайсов?",
                          reply_markup=keyboard)
+        bot.set_state(chat_id, DishAdderStates.starting, chat_id)
 
     bot.infinity_polling()
 
