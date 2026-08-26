@@ -3,6 +3,9 @@ from pathlib import Path
 
 from my_food_json_files.dish_classes import Dish, Ingredient, Preference, FoodType, Device, Unit
 
+from dataclasses import dataclass
+from frozendict import frozendict
+
 class DishLoader:
     def __init__(self):
         self.preferences = []
@@ -10,6 +13,11 @@ class DishLoader:
         self.devices = []
         self.ingredients = []
         self.units = []
+
+    # def list_to_tuple(self, ingredients):
+    #     for ingredient in ingredients:
+    #         ingredient.unit =
+
 
     def find_with_name(self, massive: list[FoodType|Device|Preference|Ingredient|Unit], name: str) -> FoodType|Device|Preference|Ingredient|Unit|None:
         """
@@ -28,6 +36,8 @@ class DishLoader:
         """
         with open(Path(Path(__file__).parent, "units.json"), "r", encoding="utf-8") as file:
             units = json.load(file)
+        for unit in units["units"]:
+            unit["alternatives"] = frozendict(unit["alternatives"])
         result_units = [Unit(**unit) for unit in units["units"]]
         self.units = result_units
 
@@ -44,6 +54,7 @@ class DishLoader:
         for ingredient in ingredients["ingredients"]:
             for index in range(0, len(ingredient["unit"])):
                 ingredient["unit"][index] = self.find_with_name(self.units, ingredient["unit"][index])
+            ingredient["unit"] = tuple(ingredient["unit"])
             result_ingredient.append(Ingredient(**ingredient))
         self.ingredients = result_ingredient
 
@@ -102,7 +113,10 @@ class DishLoader:
             dict_ingredients = {}
             for index in range(0, len(dish_ingredients_keys)):
                 full_index = dish_ingredients_keys[index]
-                dict_ingredients[self.find_with_name(self.ingredients, full_index)] = (dish["ingredients"][full_index][0], self.find_with_name(self.units, dish["ingredients"][full_index][1]))
+                print(full_index)
+                ingredient = self.find_with_name(self.ingredients, full_index)
+                print(ingredient)
+                dict_ingredients[ingredient] = (dish["ingredients"][full_index][0], self.find_with_name(self.units, dish["ingredients"][full_index][1]))
             dish["ingredients"] = dict_ingredients
             result_dish.append(Dish(**dish))
             # print(result_dish)

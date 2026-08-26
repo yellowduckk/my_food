@@ -36,8 +36,6 @@ def main():
         ingredients_dict[ingredient.name] = []
         for unit in ingredient.unit:
             ingredients_dict[ingredient.name] += unit.alternatives
-    # print(ingredients_dict)
-    # print(ingredients)
     units = DishLoader().load_units()
     all_units = []
     for unit in units:
@@ -48,7 +46,6 @@ def main():
     months_numbers_to_seasons = {1: "зима", 2: "зима", 3: "весна", 4: "весна", 5: "весна", 6: "лето", 7: "лето", 8: "лето", 9: "осень", 10: "осень", 11: "осень", 12: "зима"}
     polls_messages_ids = {}
     polls_messages_ids_for_dish_adding = {}
-    all_food_devices = []
     calendar = Calendar(language=RUSSIAN_LANGUAGE)
     calendar_callback = CallbackData("calendar", "action", "year", "month", "day")
     # keyboard = telebot.types.InlineKeyboardMarkup(row_width=1)
@@ -56,18 +53,43 @@ def main():
     button_red_devices = telebot.types.InlineKeyboardButton(text="Изменить список девайсов",
                                                             callback_data="red_devices")
     button_add_dish = telebot.types.InlineKeyboardButton(text="Добавить новое блюдо", callback_data="add_dish")
+    button_delete_dish = telebot.types.InlineKeyboardButton(text="Удалить блюдо", callback_data="delete_dish")
     button_yes = telebot.types.InlineKeyboardButton(text="Да", callback_data="yes")
     button_no = telebot.types.InlineKeyboardButton(text="Нет", callback_data="no")
+    all_food_devices = []
     devices = DishLoader().load_food_devices()
     for device in devices:
         all_food_devices.append(device.name)
     bot.add_custom_filter(custom_filters.StateFilter(bot))
 
+    def load_all_things():
+        # global dishes, dishes_names, dish_loader, dish_adder, week_gen, food_types, food_types_names, ingredients, ingredients_dict, all_food_devices, devices
+        dishes = DishLoader().load_dish()
+        dishes_names = [dish.name for dish in dishes]
+        dish_loader = DishLoader()
+        dish_adder = AddDish(dish_loader.load_dish(), dish_loader.load_ingredients(), dish_loader.load_preferences(),
+                             dish_loader.load_food_types(), dish_loader.load_food_devices(), dish_loader.load_units())
+        week_gen = WeekGenerator(dishes)
+
+        food_types = DishLoader().load_food_types()
+        food_types_names = [food_type.name for food_type in food_types]
+        all_food_devices = []
+        devices = DishLoader().load_food_devices()
+        for device in devices:
+            all_food_devices.append(device.name)
+        ingredients = DishLoader().load_ingredients()
+        ingredients_dict = {}
+        for ingredient in ingredients:
+            ingredients_dict[ingredient.name] = []
+            for unit in ingredient.unit:
+                ingredients_dict[ingredient.name] += unit.alternatives
+
     @bot.message_handler(commands=['start', 'help'])
     def send_welcome(message):
         chat_id = message.chat.id
         keyboard = telebot.types.InlineKeyboardMarkup(row_width=1)
-        keyboard.add(button_shedule, button_red_devices, button_add_dish)
+        if dishes_names == []: keyboard.add(button_shedule, button_red_devices, button_add_dish)
+        else: keyboard.add(button_shedule, button_red_devices, button_add_dish, button_delete_dish)
         if chat_id not in users_devices.keys():
             users_devices[chat_id] = all_food_devices
         devices = "\n-".join(users_devices[chat_id])
@@ -90,6 +112,10 @@ def main():
     @bot.callback_query_handler(func=lambda call: call.data == "red_devices", state=DishAdderStates.starting)
     def red_devices(call):
         chat_id = call.message.chat.id
+        # all_food_devices = []
+        # devices = DishLoader().load_food_devices()
+        # for device in devices:
+        #     all_food_devices.append(device.name)
         devices_names_length = len(all_food_devices)
         if devices_names_length > 11:
             number = devices_names_length - 11
@@ -101,9 +127,9 @@ def main():
         else:
             users_current_indexes[chat_id] = (0, 0)
             poll_message = bot.send_poll(chat_id=chat_id, question="Выберете девайсы, которые есть у вас в наличии",
-                                         options=all_food_devices + ["пропуск"], is_anonymous=False, allows_multiple_answers=True)
+                                         options=all_food_devices, is_anonymous=False, allows_multiple_answers=True)
             polls_messages_ids[chat_id] = poll_message.message_id
-            users_poll_options[chat_id] = all_food_devices + ["пропуск"]
+            users_poll_options[chat_id] = all_food_devices
         users_devices[chat_id] = []
         polls_messages_ids[chat_id] = poll_message.message_id
 
@@ -136,30 +162,35 @@ def main():
                                          options=all_food_devices[11 * count_11: 11 * (count_11 + 1)] + ["пропуск"],
                                          is_anonymous=False,
                                          allows_multiple_answers=True)
-            polls_messages_ids_for_dish_adding[chat_id] = poll_message.message_id
+            polls_messages_ids[chat_id] = poll_message.message_id
             users_current_indexes[chat_id] = (number, count_11 + 1)
             users_poll_options[chat_id] = all_food_devices[11 * count_11: 11 * (count_11 + 1)] + ["пропуск"]
         elif devices_names_length > 0:
             count_11 = users_current_indexes[chat_id][1]
             poll_message = bot.send_poll(chat_id=chat_id,
                                          question="Выберете девайсы, которые есть у вас в наличии",
-                                         options=all_food_devices[11 * count_11: len(all_food_devices)] + ["пропуск"],
+                                         options=all_food_devices[11 * count_11: len(all_food_devices)],
                                          is_anonymous=False,
                                          allows_multiple_answers=True)
-            polls_messages_ids_for_dish_adding[chat_id] = poll_message.message_id
-            users_poll_options[chat_id] = all_food_devices[11 * count_11: len(all_food_devices)] + ["пропуск"]
+            polls_messages_ids[chat_id] = poll_message.message_id
+            users_poll_options[chat_id] = all_food_devices[11 * count_11: len(all_food_devices)]
             users_current_indexes[chat_id] = (0, 0)
         else:
             keyboard = telebot.types.InlineKeyboardMarkup(row_width=1)
-            keyboard.add(button_shedule, button_red_devices, button_add_dish)
-            devices = "\n-".join(users_devices[chat_id])
-            bot.send_message(chat_id, f"Выбраны девайсы:\n-{devices}", reply_markup=keyboard)
+            if dishes_names == []: keyboard.add(button_shedule, button_red_devices, button_add_dish)
+            else: keyboard.add(button_shedule, button_red_devices, button_add_dish, button_delete_dish)
+            if users_devices[chat_id] != []:
+                devices = "\n-".join(users_devices[chat_id])
+                bot.send_message(chat_id, f"Выбраны девайсы:\n-{devices}", reply_markup=keyboard)
+            else:
+                bot.send_message(chat_id, "Вы не выбрали ни одного девайса", reply_markup=keyboard)
 
     @bot.callback_query_handler(func=lambda call: call.data.startswith(calendar_callback.prefix), state=DishAdderStates.starting)
     def callback_inline(call: types.CallbackQuery):
         chat_id = call.from_user.id
         keyboard = telebot.types.InlineKeyboardMarkup(row_width=1)
-        keyboard.add(button_shedule, button_red_devices, button_add_dish)
+        if dishes_names == []: keyboard.add(button_shedule, button_red_devices, button_add_dish)
+        else: keyboard.add(button_shedule, button_red_devices, button_add_dish, button_delete_dish)
         today_date = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
         name, action, year, month, day = call.data.split(calendar_callback.sep)
         date = calendar.calendar_query_handler(bot=bot, call=call, name=name, action=action, year=year, month=month, day=day)
@@ -196,6 +227,74 @@ def main():
                              "Хотите создать новое расписание или отредактировать список использованых девайсов?",
                              reply_markup=keyboard)
 
+    @bot.callback_query_handler(func=lambda call: call.data == "delete_dish", state=DishAdderStates.starting)
+    def callback_inline(call):
+        chat_id = call.from_user.id
+        dishes_names_length = len(dishes_names)
+        if dishes_names_length > 11:
+            number = dishes_names_length - 11
+            users_current_indexes[chat_id] = (number, 1)
+            poll_message = bot.send_poll(chat_id=chat_id,
+                                         question="Выберите блюдо, которое хотите удалить",
+                                         options=dishes_names[:11] + ["другое"], is_anonymous=False,
+                                         allows_multiple_answers=False)
+            users_poll_options[chat_id] = dishes_names[:11] + ["другое"]
+        else:
+            users_current_indexes[chat_id] = (0, 0)
+            poll_message = bot.send_poll(chat_id=chat_id,
+                                         question="Выберите блюдо, которое хотите удалить",
+                                         options=dishes_names + ["другое"], is_anonymous=False,
+                                         allows_multiple_answers=False)
+            users_poll_options[chat_id] = dishes_names + ["другое"]
+        bot.set_state(chat_id, DishAdderStates.dish_deleting, chat_id)
+        polls_messages_ids_for_dish_adding[chat_id] = poll_message.message_id
+
+    @bot.poll_answer_handler(state=DishAdderStates.dish_deleting)
+    def dish_deleting_handler(poll):
+        chat_id = poll.user.id
+        selected_option_id = poll.option_ids[0]
+        bot.stop_poll(chat_id=chat_id, message_id=polls_messages_ids_for_dish_adding[chat_id])
+        keyboard = telebot.types.InlineKeyboardMarkup(row_width=1)
+        if selected_option_id != len(users_poll_options[chat_id]) - 1:
+            selected_dish = users_poll_options[chat_id][selected_option_id]
+            dish_adder.del_d(selected_dish)
+            load_all_things()
+            if dishes_names == []: keyboard.add(button_shedule, button_red_devices, button_add_dish)
+            else: keyboard.add(button_shedule, button_red_devices, button_add_dish, button_delete_dish)
+            bot.send_message(chat_id, f"Блюдо {selected_dish.name} удалено", reply_markup=keyboard)
+            bot.set_state(chat_id, DishAdderStates.starting, chat_id)
+        else:
+            dishes_names_length = users_current_indexes[chat_id][0]
+            if dishes_names_length == 0:
+                bot.set_state(chat_id, DishAdderStates.starting, chat_id)
+                if dishes_names == []:
+                    keyboard.add(button_shedule, button_red_devices, button_add_dish)
+                else:
+                    keyboard.add(button_shedule, button_red_devices, button_add_dish, button_delete_dish)
+                bot.send_message(chat_id, "Вы не выбрали ни одного блюда")
+                bot.set_state(chat_id, DishAdderStates.starting, chat_id)
+            elif dishes_names_length < 11:
+                count_11 = users_current_indexes[chat_id][1]
+                poll_message = bot.send_poll(chat_id=chat_id,
+                                             question="Выберите блюдо, которое хотите удалить",
+                                             options=dishes_names[11 * count_11: len(dishes_names)] + ["другое"],
+                                             is_anonymous=False,
+                                             allows_multiple_answers=False)
+                polls_messages_ids_for_dish_adding[chat_id] = poll_message.message_id
+                users_poll_options[chat_id] = dishes_names[11 * count_11: len(dishes_names)] + ["другое"]
+                users_current_indexes[chat_id] = (0, 0)
+            else:
+                number = dishes_names_length - 11
+                count_11 = users_current_indexes[chat_id][1]
+                poll_message = bot.send_poll(chat_id=chat_id,
+                                             question="Выберите блюдо, которое хотите удалить",
+                                             options=dishes_names[11 * count_11: 11 * (count_11 + 1)] + ["другое"],
+                                             is_anonymous=False,
+                                             allows_multiple_answers=False)
+                polls_messages_ids_for_dish_adding[chat_id] = poll_message.message_id
+                users_current_indexes[chat_id] = (number, count_11 + 1)
+                users_poll_options[chat_id] = dishes_names[11 * count_11: 11 * (count_11 + 1)] + ["другое"]
+
     @bot.message_handler(state=DishAdderStates.dish_naming)
     def name_handler(message):
         chat_id = message.chat.id
@@ -204,12 +303,15 @@ def main():
         print(new_name)
         if new_name in dishes_names:
             keyboard = telebot.types.InlineKeyboardMarkup(row_width=1)
-            keyboard.add(button_shedule, button_red_devices, button_add_dish)
+            if dishes_names == []:
+                keyboard.add(button_shedule, button_red_devices, button_add_dish)
+            else:
+                keyboard.add(button_shedule, button_red_devices, button_add_dish, button_delete_dish)
             bot.set_state(message.from_user.id, DishAdderStates.starting, chat_id)
             bot.send_message(chat_id, "Блюдо с таким названием уже существует", reply_markup=keyboard)
         else:
             users_dishes[chat_id].append(new_name)
-            food_types_names_length = len(all_food_devices)
+            food_types_names_length = len(food_types_names)
             if food_types_names_length > 11:
                 number = food_types_names_length - 11
                 users_current_indexes[chat_id] = (number, 1)
@@ -217,7 +319,7 @@ def main():
                                              question="Выберите тип блюда",
                                              options=food_types_names[:11] + ["другое"], is_anonymous=False,
                                              allows_multiple_answers=False)
-                users_poll_options[chat_id] = food_types_names[:11] + ["пропуск"]
+                users_poll_options[chat_id] = food_types_names[:11] + ["другое"]
             else:
                 users_current_indexes[chat_id] = (0, 0)
                 poll_message = bot.send_poll(chat_id=chat_id,
@@ -251,11 +353,11 @@ def main():
                 count_11 = users_current_indexes[chat_id][1]
                 poll_message = bot.send_poll(chat_id=chat_id,
                                              question="Выберите тип блюда",
-                                             options=food_types_names[11 * count_11: len(all_food_devices)] + ["другое"],
+                                             options=food_types_names[11 * count_11: len(food_types_names)] + ["другое"],
                                              is_anonymous=False,
                                              allows_multiple_answers=False)
                 polls_messages_ids_for_dish_adding[chat_id] = poll_message.message_id
-                users_poll_options[chat_id] = all_food_devices[11 * count_11: len(all_food_devices)] + ["другое"]
+                users_poll_options[chat_id] = food_types_names[11 * count_11: len(food_types_names)] + ["другое"]
                 users_current_indexes[chat_id] = (0, 0)
             else:
                 number = types_names_length - 11
@@ -484,9 +586,11 @@ def main():
     def callback_inline(call):
         chat_id = call.message.chat.id
         keyboard = telebot.types.InlineKeyboardMarkup(row_width=1)
-        keyboard.add(button_shedule, button_red_devices, button_add_dish)
-        bot.send_message(chat_id, f"Блюдо добавлено")
+        keyboard.add(button_shedule, button_red_devices, button_add_dish, button_delete_dish)
         dish_adder.add_d(*users_dishes[chat_id])
+        if users_dishes[chat_id][3] not in all_food_devices: users_devices[chat_id].append(users_dishes[chat_id][3])
+        load_all_things()
+        bot.send_message(chat_id, f"Блюдо добавлено")
         bot.send_message(chat_id, "Хотите создать новое расписание или отредактировать список использованых девайсов?",
                          reply_markup=keyboard)
         bot.set_state(chat_id, DishAdderStates.starting, chat_id)
@@ -495,7 +599,7 @@ def main():
     def callback_inline(call):
         chat_id = call.message.chat.id
         keyboard = telebot.types.InlineKeyboardMarkup(row_width=1)
-        keyboard.add(button_shedule, button_red_devices, button_add_dish)
+        keyboard.add(button_shedule, button_red_devices, button_add_dish, button_delete_dish)
         bot.send_message(chat_id, "Хотите создать новое расписание или отредактировать список использованых девайсов?",
                          reply_markup=keyboard)
         bot.set_state(chat_id, DishAdderStates.starting, chat_id)

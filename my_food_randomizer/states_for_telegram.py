@@ -20,3 +20,4 @@ class DishAdderStates(StatesGroup):
     cooking_time_adding = State()
     eating_time_adding = State()
     quitting = State()
+    dish_deleting = State()
