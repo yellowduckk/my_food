@@ -1,3 +1,46 @@
 {
-    "dishes": []
+    "dishes": [
+        {
+            "id": 1,
+            "name": "блюдо ы",
+            "food_type": "закуска",
+            "preferences": [
+                "зима"
+            ],
+            "food_device": "мультиварка",
+            "ingredients": {
+                "ингредиенты": [
+                    68,
+                    "г"
+                ],
+                "г и г": [
+                    577000,
+                    "г"
+                ],
+                "коровы": [
+                    678,
+                    "мл"
+                ]
+            },
+            "cooking_time": 1,
+            "eating_time": 2
+        },
+        {
+            "id": 1,
+            "name": "н",
+            "food_type": "жидкое",
+            "preferences": [
+                "зима"
+            ],
+            "food_device": "мультиварка",
+            "ingredients": {
+                "н": [
+                    6,
+                    "г"
+                ]
+            },
+            "cooking_time": 2,
+            "eating_time": 1
+        }
+    ]
 }
