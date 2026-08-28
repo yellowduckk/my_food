@@ -113,9 +113,7 @@ class DishLoader:
             dict_ingredients = {}
             for index in range(0, len(dish_ingredients_keys)):
                 full_index = dish_ingredients_keys[index]
-                print(full_index)
                 ingredient = self.find_with_name(self.ingredients, full_index)
-                print(ingredient)
                 dict_ingredients[ingredient] = (dish["ingredients"][full_index][0], self.find_with_name(self.units, dish["ingredients"][full_index][1]))
             dish["ingredients"] = dict_ingredients
             result_dish.append(Dish(**dish))
